@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سجل عزل البليط - Condor CQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #e9e5da;
+    --panel: #fbfaf6;
+    --ink: #23262b;
+    --ink-soft: #5b5a52;
+    --line: #d8d2c2;
+    --amber: #e2a233;
+    --amber-dark: #b97e1f;
+    --red: #b8433a;
+    --red-bg: #f7e4e0;
+    --green: #4c7a56;
+    --green-bg: #e4efe2;
+    --blue: #3a6ea8;
+    --blue-bg: #e2ebf3;
+    --shadow: 0 2px 0 rgba(35,38,43,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(135deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 2px, transparent 2px, transparent 14px),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Tajawal', sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  header{
+    background: repeating-linear-gradient(-45deg, #23262b, #23262b 14px, #2c3037 14px, #2c3037 28px);
+    color:#f4f1e8;
+    padding:20px 18px 18px;
+    position:relative;
+    overflow:hidden;
+    border-bottom:6px solid var(--amber);
+  }
+  header .tag{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--amber); color:#23262b;
+    font-family:'Cairo',sans-serif; font-weight:900; font-size:12px; letter-spacing:1px;
+    padding:4px 10px; border-radius:3px; margin-bottom:10px;
+  }
+  header h1{font-family:'Cairo',sans-serif;font-weight:900;font-size:22px;margin:0 0 4px;line-height:1.3;}
+  header p{margin:0;color:#c9c6ba;font-size:13px;font-weight:500;}
+
+  .container{max-width:640px;margin:0 auto;padding:16px;}
+
+  /* Session bar */
+  .session-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .session-user{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;}
+  .role-badge{
+    font-family:'Cairo',sans-serif; font-size:10px; font-weight:800;
+    padding:2px 8px; border-radius:20px; background:var(--blue-bg); color:var(--blue);
+  }
+  .role-badge.supervisor{background:var(--amber);color:#23262b;}
+  .logout-link{background:none;border:none;color:var(--ink-soft);font-size:12px;text-decoration:underline;cursor:pointer;font-family:'Tajawal',sans-serif;}
+
+  .tabs{display:flex;gap:6px;margin-bottom:16px;background:#dcd7c8;padding:4px;border-radius:12px;flex-wrap:wrap;}
+  .tab{
+    flex:1; min-width:70px; text-align:center; padding:10px 4px; border-radius:9px;
+    font-family:'Cairo',sans-serif; font-weight:800; font-size:12.5px; color:var(--ink-soft);
+    cursor:pointer; border:none; background:transparent; transition:all .15s;
+  }
+  .tab.active{background:var(--panel);color:var(--ink);box-shadow:var(--shadow);}
+  .tab .count{display:inline-block;min-width:18px;padding:0 5px;margin-inline-start:4px;background:var(--red);color:#fff;border-radius:20px;font-size:10px;line-height:16px;}
+  .tab.active .count{background:var(--amber-dark);}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px;}
+  .panel h2{font-family:'Cairo',sans-serif;font-size:16px;font-weight:800;margin:0 0 14px;display:flex;align-items:center;gap:8px;}
+  .panel h3{font-family:'Cairo',sans-serif;font-size:14px;font-weight:800;margin:0 0 10px;}
+  .swatch{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;}
+  .field input, .field select, .field textarea{
+    width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:9px;
+    font-family:'Tajawal',sans-serif; font-size:14.5px; font-weight:500; color:var(--ink);
+    background:#fff; outline:none; transition:border-color .12s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--amber-dark);}
+  .field textarea{resize:vertical;min-height:56px;}
+  .row2{display:flex;gap:10px;}
+  .row2 .field{flex:1;}
+  .hint{font-size:11.5px;margin-top:4px;font-weight:700;}
+  .hint.found{color:var(--green);}
+  .hint.notfound{color:var(--ink-soft);}
+
+  /* Scan row with camera button */
+  .scan-row{display:flex;gap:8px;align-items:stretch;}
+  .scan-row input{flex:1;min-width:0;}
+  .cam-btn{
+    flex:0 0 auto; width:46px; display:flex; align-items:center; justify-content:center;
+    background:var(--ink); color:#f4f1e8; border:none; border-radius:9px;
+    font-size:19px; cursor:pointer; transition:background .12s;
+  }
+  .cam-btn:active{background:var(--amber-dark);}
+
+  /* Camera scan modal */
+  #scanModal .modal{padding:16px;max-width:640px;}
+  .scan-video-wrap{
+    position:relative; width:100%; border-radius:12px; overflow:hidden;
+    background:#000; aspect-ratio:1/1; max-height:60vh;
+  }
+  #scanReader{width:100%;height:100%;}
+  #scanReader video{width:100%;height:100%;object-fit:cover;}
+  .scan-frame{
+    position:absolute; inset:12%; border:3px solid var(--amber); border-radius:14px;
+    pointer-events:none; box-shadow:0 0 0 2000px rgba(0,0,0,0.35);
+  }
+  .scan-status{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:10px;font-weight:600;}
+  .scan-status.err{color:var(--red);}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px; width:100%;
+    padding:13px; border:none; border-radius:10px; font-family:'Cairo',sans-serif;
+    font-weight:800; font-size:14.5px; cursor:pointer; transition:transform .08s, opacity .12s;
+  }
+  .btn:active{transform:scale(0.98);}
+  .btn-isolate{background:var(--red);color:#fff;}
+  .btn-release{background:var(--green);color:#fff;}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1.5px solid var(--line);}
+  .btn-sm{width:auto;padding:8px 14px;font-size:12.5px;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-inline-start:6px solid var(--red);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
+  .card.released{border-inline-start-color:var(--green);}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .card-model{font-family:'Cairo',sans-serif;font-weight:800;font-size:15.5px;}
+  .card-pallet{font-family:'Cairo',sans-serif;font-size:12px;font-weight:800;background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:6px;white-space:nowrap;}
+  .card.released .card-pallet{background:var(--green-bg);color:var(--green);}
+  .card-meta{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:12.5px;color:var(--ink-soft);}
+  .card-meta b{color:var(--ink);font-weight:700;}
+  .card-notes{margin-top:8px;font-size:12.5px;color:var(--ink-soft);background:#f3f1e9;padding:7px 9px;border-radius:7px;}
+  .card-footer{margin-top:12px;}
+
+  .empty{text-align:center;padding:40px 20px;color:var(--ink-soft);}
+  .empty .icon{font-size:34px;margin-bottom:8px;}
+  .empty p{margin:0;font-size:13.5px;font-weight:500;}
+
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#f4f1e8;padding:11px 20px;border-radius:30px;font-size:13px;font-weight:700;
+    box-shadow:0 6px 20px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:all .25s;z-index:100;
+    white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(35,38,43,0.55);display:none;align-items:flex-end;justify-content:center;z-index:200;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--panel);width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:20px 18px 26px;animation:slideUp .2s ease-out;max-height:88vh;overflow-y:auto;}
+  @keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal h3{font-family:'Cairo',sans-serif;font-size:16px;margin:0 0 4px;}
+  .modal .sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:16px;}
+  .modal-actions{display:flex;gap:8px;margin-top:16px;}
+
+  .banner{display:flex;gap:8px;align-items:flex-start;background:#efe6cf;border:1px solid #d9c48f;color:#6b5316;padding:10px 12px;border-radius:10px;font-size:12px;margin-bottom:14px;line-height:1.6;}
+  .loading{text-align:center;padding:30px;color:var(--ink-soft);font-size:13px;}
+  .spin{width:20px;height:20px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--amber-dark);animation:sp 0.8s linear infinite;margin:0 auto 10px;}
+  @keyframes sp{to{transform:rotate(360deg);}}
+
+  .footer-links{text-align:center;margin-top:6px;}
+  .footer-links button{background:none;border:none;color:var(--ink-soft);font-size:12px;text-decoration:underline;cursor:pointer;font-family:'Tajawal',sans-serif;}
+
+  /* Login screen */
+  .login-wrap{max-width:400px;margin:40px auto;padding:0 16px;}
+  .login-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 20px;box-shadow:var(--shadow);}
+  .login-card h2{font-family:'Cairo',sans-serif;font-size:18px;margin:0 0 4px;}
+  .login-card .sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:18px;}
+  .pin-input{letter-spacing:8px;font-size:20px !important;text-align:center;font-weight:800 !important;}
+
+  /* Supervisor rows */
+  .list-row{
+    display:flex; align-items:center; gap:8px; padding:10px 8px; border:1px solid var(--line);
+    border-radius:10px; margin-bottom:8px; background:#fff; flex-wrap:wrap;
+  }
+  .list-row .grow{flex:1;min-width:120px;}
+  .list-row .name{font-weight:800;font-size:13.5px;}
+  .list-row .sub2{font-size:11.5px;color:var(--ink-soft);}
+  .icon-btn{
+    background:none;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;
+    font-size:12px;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:700;color:var(--ink-soft);
+  }
+  .icon-btn.danger{color:var(--red);border-color:#e3c3bd;}
+  .icon-btn.ok{color:var(--green);border-color:#c4d9c7;}
+  .subtabs{display:flex;gap:6px;margin-bottom:14px;}
+  .subtab{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:12.5px;font-weight:800;font-family:'Cairo',sans-serif;border:1.5px solid var(--line);background:#fff;color:var(--ink-soft);cursor:pointer;}
+  .subtab.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .inactive-row{opacity:0.5;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">⬢ Condor Electronics — BU Cuisson</div>
+  <h1>سجل عزل وتحرير البليط</h1>
+  <p>مراقبة الجودة عند الخروج — OQC</p>
+</header>
+
+<!-- LOGIN SCREEN -->
+<div class="login-wrap" id="loginScreen" style="display:none">
+  <div class="banner">🔒 هذا التطبيق يستعمل دخولًا مبسطًا داخل الشركة لنسب كل عملية عزل/تحرير لاسم المفتش. ليس نظام حماية بمستوى بنكي — لا تستعمل رمزًا حساسًا تستعمله في مكان آخر.</div>
+
+  <!-- First-run setup -->
+  <div class="login-card" id="setupCard" style="display:none">
+    <h2>🛠 إعداد أولي — إنشاء أول حساب مشرف</h2>
+    <div class="sub">لا يوجد بعد أي مستخدم مسجّل في هذا التطبيق. أنشئ حساب المشرف الأول لتتمكن بعدها من إضافة المفتشين.</div>
+    <div class="field"><label>الاسم الكامل</label><input type="text" id="su_fullname" placeholder="مثال: بلالة عبد الكريم"></div>
+    <div class="field"><label>اسم الدخول</label><input type="text" id="su_username" placeholder="مثال: bellala" autocapitalize="off"></div>
+    <div class="field"><label>رمز سري (4 أرقام)</label><input type="password" id="su_pin" class="pin-input" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <button class="btn btn-primary" id="btnSetup">إنشاء حساب المشرف والدخول</button>
+  </div>
+
+  <!-- Normal login -->
+  <div class="login-card" id="loginCard" style="display:none">
+    <h2>👤 تسجيل الدخول</h2>
+    <div class="sub">اختر اسمك وأدخل رمزك السري للمتابعة</div>
+    <div class="field"><label>اسم المفتش</label><select id="li_username"></select></div>
+    <div class="field"><label>الرمز السري</label><input type="password" id="li_pin" class="pin-input" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <button class="btn btn-primary" id="btnLogin">دخول</button>
+    <div class="hint" id="loginError" style="color:var(--red);margin-top:8px;"></div>
+  </div>
+
+  <div class="login-card" style="margin-top:14px;">
+    <h2 style="font-size:14px">🔧 تشخيص التخزين</h2>
+    <div class="sub">إذا واجهت خطأ في الحفظ، اضغط هنا لمعرفة السبب بالضبط</div>
+    <button class="btn btn-ghost" id="btnDiag">تشغيل التشخيص</button>
+    <div id="diagResult" style="margin-top:12px;font-size:12.5px;line-height:1.9;white-space:pre-wrap;"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="container" id="mainApp" style="display:none">
+
+  <div class="banner" id="sharedBanner">⚠️ هذه البيانات <b>مشتركة</b> بين كل المفتشين المرخصين لهذا التطبيق.</div>
+
+  <div class="session-bar">
+    <div class="session-user">
+      👤 <span id="sessionName"></span>
+      <span class="role-badge" id="sessionRoleBadge"></span>
+    </div>
+    <button class="logout-link" id="logoutBtn">تسجيل الخروج</button>
+  </div>
+
+  <div class="tabs" id="tabsBar">
+    <button class="tab active" data-tab="isolate">➕ عزل</button>
+    <button class="tab" data-tab="active">🔴 المعزولة <span class="count" id="countActive">0</span></button>
+    <button class="tab" data-tab="history">📋 السجل</button>
+    <button class="tab" data-tab="admin" id="adminTabBtn" style="display:none">⚙️ لوحة المشرف</button>
+  </div>
+
+  <!-- ISOLATE TAB -->
+  <div class="tab-content" id="tab-isolate">
+    <div class="panel">
+      <h2><span class="swatch" style="background:var(--red)"></span> بيانات البليط المعزولة</h2>
+
+      <div class="field">
+        <label>رقم البليط / الرقم التسلسلي (Scan) *</label>
+        <div class="scan-row">
+          <input type="text" id="f_pallet" placeholder="امسح الباركود أو اكتب الرقم" autocomplete="off">
+          <button type="button" class="cam-btn" id="openCamBtn" title="مسح بالكاميرا">📷</button>
+        </div>
+        <div class="hint" id="scanHint"></div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>الموديل *</label>
+          <input type="text" id="f_model" placeholder="مثال: NCG10PZ2" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>الكمية</label>
+          <input type="number" id="f_qty" placeholder="مثال: 48" autocomplete="off" min="0">
+        </div>
+      </div>
+      <div class="field">
+        <label>نوع المنتج *</label>
+        <input type="text" id="f_type" list="typeList" placeholder="اختر أو اكتب" autocomplete="off">
+        <datalist id="typeList"></datalist>
+      </div>
+
+      <div class="field">
+        <label>سبب العزل / ملاحظات</label>
+        <textarea id="f_notes" placeholder="مثال: عيب في التغليف، نقص علامة تنظيمية..."></textarea>
+      </div>
+
+      <button class="btn btn-isolate" id="btnIsolate">🔒 تسجيل عزل البليط</button>
+    </div>
+  </div>
+
+  <!-- ACTIVE TAB -->
+  <div class="tab-content" id="tab-active" style="display:none"><div id="activeList"></div></div>
+
+  <!-- HISTORY TAB -->
+  <div class="tab-content" id="tab-history" style="display:none">
+    <div id="historyList"></div>
+    <div class="footer-links"><button id="exportBtn">⬇ تصدير السجل كملف CSV</button></div>
+  </div>
+
+  <!-- ADMIN TAB (supervisor only) -->
+  <div class="tab-content" id="tab-admin" style="display:none">
+    <div class="subtabs">
+      <button class="subtab active" data-sub="users">👥 المفتشون المرخصون</button>
+      <button class="subtab" data-sub="catalog">📦 قائمة الموديلات (التعبئة التلقائية)</button>
+    </div>
+
+    <!-- Users management -->
+    <div id="sub-users">
+      <div class="panel">
+        <h3>إضافة مفتش / مشرف جديد</h3>
+        <div class="row2">
+          <div class="field"><label>الاسم الكامل</label><input type="text" id="au_fullname"></div>
+          <div class="field"><label>اسم الدخول</label><input type="text" id="au_username" autocapitalize="off"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>رمز سري (4 أرقام)</label><input type="password" id="au_pin" class="pin-input" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+          <div class="field"><label>الصلاحية</label>
+            <select id="au_role"><option value="inspector">مفتش</option><option value="supervisor">مشرف</option></select>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btnAddUser">➕ إضافة الحساب</button>
+      </div>
+      <div id="usersList"></div>
+    </div>
+
+    <!-- Catalog management -->
+    <div id="sub-catalog" style="display:none">
+      <div class="banner" style="margin-bottom:14px;">💡 يمكنك أيضًا فتح ورقة "الموديلات" في Google Sheets مباشرة وإضافة/تعديل صفوف عديدة دفعة واحدة — أي تعديل هناك يظهر فورًا هنا.</div>
+      <div class="panel">
+        <h3>إضافة عنصر جديد</h3>
+        <div class="field"><label>رقم البليط / بادئة الرقم التسلسلي</label><input type="text" id="ac_prefix" placeholder="مثال: NCG10- أو رقم كامل"></div>
+        <div class="row2">
+          <div class="field"><label>الموديل</label><input type="text" id="ac_model" placeholder="مثال: NCG10PZ2"></div>
+          <div class="field"><label>الكمية</label><input type="number" id="ac_qty" placeholder="مثال: 48" min="0"></div>
+        </div>
+        <div class="field"><label>نوع المنتج</label><input type="text" id="ac_type" placeholder="مثال: سخان مياه غاز"></div>
+        <button class="btn btn-primary" id="btnAddCatalog">➕ إضافة إلى القائمة</button>
+      </div>
+      <div id="catalogList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Release Modal -->
+<div class="modal-overlay" id="releaseModal">
+  <div class="modal">
+    <h3>تحرير البليط</h3>
+    <div class="sub" id="releaseModalSub"></div>
+    <div class="field"><label>ملاحظات التحرير (اختياري)</label><textarea id="releaseNotes" placeholder="مثال: تم تصحيح العيب، مطابق للمواصفات..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelRelease" style="width:auto;flex:1">إلغاء</button>
+      <button class="btn btn-release" id="confirmRelease" style="flex:2">✅ تأكيد التحرير</button>
+    </div>
+  </div>
+</div>
+
+<!-- Camera Scan Modal -->
+<div class="modal-overlay" id="scanModal">
+  <div class="modal">
+    <h3>📷 مسح باركود / QR البليط</h3>
+    <div class="sub">وجّه الكاميرا نحو الباركود أو رمز QR</div>
+    <div class="scan-video-wrap">
+      <div id="scanReader"></div>
+      <div class="scan-frame"></div>
+    </div>
+    <div class="scan-status" id="scanStatus">جارٍ تشغيل الكاميرا...</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="closeScanBtn" style="width:100%">إلغاء</button>
+      <button class="btn btn-release" id="retryScanBtn" style="width:100%;display:none">🔄 إعادة المحاولة</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxnJJzDhXz7TG51u0TycZe6woOyJS1JQtpYJQhB_TGP_U2giGWoeuLqRYj669ztC48Q/exec';
+
+const STATUS_ISOLATED = 'معزولة';
+const STATUS_RELEASED = 'محررة';
+
+let records = [];
+let authUsers = [];
+let catalog = [];
+let currentUser = null;
+let currentTab = 'isolate';
+let currentSubtab = 'users';
+let releaseTargetId = null;
+
+const $ = (id) => document.getElementById(id);
+const toastEl = $('toast');
+
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=> toastEl.classList.remove('show'), 2400);
+}
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : s;
+  return d.innerHTML;
+}
+function fmtDateTime(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d)) return String(iso);
+  return d.toLocaleDateString('ar-DZ', {year:'numeric', month:'2-digit', day:'2-digit'}) + ' — ' + d.toLocaleTimeString('ar-DZ', {hour:'2-digit', minute:'2-digit'});
+}
+function durationText(startIso, endIso){
+  const ms = new Date(endIso) - new Date(startIso);
+  const mins = Math.floor(ms/60000);
+  if(mins < 60) return mins + ' د';
+  const hrs = Math.floor(mins/60);
+  if(hrs < 24) return hrs + ' س ' + (mins%60) + ' د';
+  const days = Math.floor(hrs/24);
+  return days + ' يوم ' + (hrs%24) + ' س';
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+async function withRetry(fn, label, maxAttempts){
+  maxAttempts = maxAttempts || 3;
+  let lastErr = null;
+  for(let attempt=1; attempt<=maxAttempts; attempt++){
+    try{ return await fn(); }
+    catch(e){
+      lastErr = e;
+      console.error(label + ' attempt ' + attempt + ' failed', e);
+      if(attempt < maxAttempts) await sleep(500 * attempt);
+    }
+  }
+  throw lastErr;
+}
+
+/* ---------- GOOGLE SHEETS DATABASE (generic API) ---------- */
+async function gasList(sheetKey){
+  const res = await fetch(GAS_URL + '?action=list&sheet=' + encodeURIComponent(sheetKey));
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  return data.rows || [];
+}
+async function gasAppend(sheetKey, row){
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify({ action:'append', sheet: sheetKey, row: row })
+  });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || 'append failed');
+  return true;
+}
+async function gasUpdate(sheetKey, column, value, updates){
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify({ action:'update', sheet: sheetKey, match:{column, value}, updates: updates })
+  });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || 'update failed');
+  return true;
+}
+async function gasDelete(sheetKey, column, value){
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify({ action:'delete', sheet: sheetKey, match:{column, value} })
+  });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || 'delete failed');
+  return true;
+}
+
+async function safeList(sheetKey, label){
+  try{ return await withRetry(() => gasList(sheetKey), 'list:'+label); }
+  catch(e){ console.error(e); showToast('⚠️ تعذر الاتصال بقاعدة البيانات — تحقق من الإنترنت'); return []; }
+}
+async function safeAppend(sheetKey, row, label){
+  try{ await withRetry(() => gasAppend(sheetKey, row), 'append:'+label); return true; }
+  catch(e){ console.error(e); showToast('⚠️ فشل الحفظ — تحقق من الإنترنت وحاول مجددًا'); return false; }
+}
+async function safeUpdate(sheetKey, column, value, updates, label){
+  try{ await withRetry(() => gasUpdate(sheetKey, column, value, updates), 'update:'+label); return true; }
+  catch(e){ console.error(e); showToast('⚠️ فشل التحديث — تحقق من الإنترنت وحاول مجددًا'); return false; }
+}
+async function safeDelete(sheetKey, column, value, label){
+  try{ await withRetry(() => gasDelete(sheetKey, column, value), 'delete:'+label); return true; }
+  catch(e){ console.error(e); showToast('⚠️ فشل الحذف — تحقق من الإنترنت وحاول مجددًا'); return false; }
+}
+
+// Local device-only session persistence (not part of the shared DB)
+function loadPersonal(key){ try{ return localStorage.getItem(key); }catch(e){ return null; } }
+function savePersonal(key, value){ try{ localStorage.setItem(key, value); }catch(e){} }
+function deletePersonal(key){ try{ localStorage.removeItem(key); }catch(e){} }
+
+/* ---------- ROW <-> OBJECT MAPPING ---------- */
+function userFromRow(row){
+  return {
+    fullName: row['الاسم_الكامل'] || '',
+    username: String(row['اسم_الدخول'] || '').toLowerCase(),
+    pin: String(row['الرمز_السري'] || ''),
+    role: row['الصلاحية'] || 'inspector',
+    active: row['نشط'] === false || String(row['نشط']).toUpperCase() === 'FALSE' ? false : true
+  };
+}
+function userToRow(u){
+  return {
+    'الاسم_الكامل': u.fullName,
+    'اسم_الدخول': u.username,
+    'الرمز_السري': u.pin,
+    'الصلاحية': u.role,
+    'نشط': u.active !== false
+  };
+}
+function catalogFromRow(row){
+  return {
+    serialPrefix: String(row['رقم_البليط_أو_البادئة'] || ''),
+    model: row['الموديل'] || '',
+    quantity: row['الكمية'] || '',
+    productType: row['نوع_المنتج'] || ''
+  };
+}
+function catalogToRow(c){
+  return {
+    'رقم_البليط_أو_البادئة': c.serialPrefix,
+    'الموديل': c.model,
+    'الكمية': c.quantity,
+    'نوع_المنتج': c.productType
+  };
+}
+function recordFromRow(row){
+  return {
+    id: String(row['معرف'] || ''),
+    palletNumber: row['رقم_البليط'] || '',
+    model: row['الموديل'] || '',
+    quantity: row['الكمية'] || '',
+    productType: row['نوع_المنتج'] || '',
+    isolateNotes: row['ملاحظات_العزل'] || '',
+    isolatedAt: row['تاريخ_ووقت_العزل'] || '',
+    isolatedByUsername: row['عازل_اسم_الدخول'] || '',
+    isolatedBy: row['عازل_الاسم_الكامل'] || '',
+    status: row['الحالة'] || STATUS_ISOLATED,
+    releasedAt: row['تاريخ_ووقت_التحرير'] || '',
+    releasedByUsername: row['محرر_اسم_الدخول'] || '',
+    releasedBy: row['محرر_الاسم_الكامل'] || '',
+    releaseNotes: row['ملاحظات_التحرير'] || ''
+  };
+}
+function recordToRow(r){
+  return {
+    'معرف': r.id,
+    'رقم_البليط': r.palletNumber,
+    'الموديل': r.model,
+    'الكمية': r.quantity,
+    'نوع_المنتج': r.productType,
+    'ملاحظات_العزل': r.isolateNotes,
+    'تاريخ_ووقت_العزل': r.isolatedAt,
+    'عازل_اسم_الدخول': r.isolatedByUsername,
+    'عازل_الاسم_الكامل': r.isolatedBy,
+    'الحالة': r.status,
+    'تاريخ_ووقت_التحرير': r.releasedAt || '',
+    'محرر_اسم_الدخول': r.releasedByUsername || '',
+    'محرر_الاسم_الكامل': r.releasedBy || '',
+    'ملاحظات_التحرير': r.releaseNotes || ''
+  };
+}
+
+/* ---------- AUTH ---------- */
+async function initAuth(){
+  const userRows = await safeList('users', 'users');
+  authUsers = userRows.map(userFromRow);
+
+  const sessionUsername = loadPersonal('condor_session_v1');
+  if(sessionUsername){
+    const u = authUsers.find(u => u.username === sessionUsername && u.active !== false);
+    if(u){ currentUser = u; return true; }
+  }
+  return false;
+}
+
+function renderLoginScreen(){
+  $('loginScreen').style.display = 'block';
+  $('mainApp').style.display = 'none';
+  if(authUsers.length === 0){
+    $('setupCard').style.display = 'block';
+    $('loginCard').style.display = 'none';
+  }else{
+    $('setupCard').style.display = 'none';
+    $('loginCard').style.display = 'block';
+    const sel = $('li_username');
+    const activeUsers = authUsers.filter(u => u.active !== false);
+    sel.innerHTML = activeUsers.map(u => `<option value="${escapeHtml(u.username)}">${escapeHtml(u.fullName)}</option>`).join('');
+  }
+}
+
+$('btnSetup').addEventListener('click', async ()=>{
+  const fullName = $('su_fullname').value.trim();
+  const username = $('su_username').value.trim().toLowerCase();
+  const pin = $('su_pin').value.trim();
+  if(!fullName || !username || pin.length !== 4 || !/^\d{4}$/.test(pin)){
+    showToast('⚠️ يرجى تعبئة كل الحقول (رمز سري 4 أرقام)'); return;
+  }
+  const btn = $('btnSetup');
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  const user = { fullName, username, pin, role:'supervisor', active:true };
+  const ok = await safeAppend('users', userToRow(user), 'setup');
+  btn.disabled = false; btn.textContent = 'إنشاء حساب المشرف والدخول';
+  if(ok){
+    authUsers.push(user);
+    savePersonal('condor_session_v1', username);
+    currentUser = user;
+    showToast('✅ تم إنشاء حساب المشرف');
+    await bootMainApp();
+  }
+});
+
+$('btnLogin').addEventListener('click', async ()=>{
+  const username = $('li_username').value;
+  const pin = $('li_pin').value.trim();
+  const btn = $('btnLogin');
+  btn.disabled = true; btn.textContent = 'جاري التحقق...';
+  // reload users fresh in case something changed
+  const userRows = await safeList('users', 'login');
+  authUsers = userRows.map(userFromRow);
+  btn.disabled = false; btn.textContent = 'دخول';
+
+  const u = authUsers.find(x => x.username === username && x.active !== false);
+  $('loginError').textContent = '';
+  if(!u || u.pin !== pin){
+    $('loginError').textContent = '❌ الرمز السري غير صحيح';
+    return;
+  }
+  savePersonal('condor_session_v1', username);
+  currentUser = u;
+  showToast('✅ مرحبًا ' + u.fullName);
+  await bootMainApp();
+});
+
+$('logoutBtn').addEventListener('click', ()=>{
+  deletePersonal('condor_session_v1');
+  currentUser = null;
+  $('li_pin').value = '';
+  renderLoginScreen();
+});
+
+/* ---------- MAIN APP BOOT ---------- */
+async function bootMainApp(){
+  $('loginScreen').style.display = 'none';
+  $('mainApp').style.display = 'block';
+
+  $('sessionName').textContent = currentUser.fullName;
+  $('sessionRoleBadge').textContent = currentUser.role === 'supervisor' ? 'مشرف' : 'مفتش';
+  $('sessionRoleBadge').className = 'role-badge' + (currentUser.role === 'supervisor' ? ' supervisor' : '');
+  $('adminTabBtn').style.display = currentUser.role === 'supervisor' ? 'block' : 'none';
+
+  await refreshCatalog();
+  await refreshRecords();
+  render();
+}
+
+async function refreshRecords(){
+  const rows = await safeList('records', 'records');
+  records = rows.map(recordFromRow).reverse(); // newest first
+}
+async function refreshCatalog(){
+  const rows = await safeList('catalog', 'catalog');
+  catalog = rows.map(catalogFromRow);
+  refreshTypeList();
+}
+async function refreshUsers(){
+  const rows = await safeList('users', 'users');
+  authUsers = rows.map(userFromRow);
+}
+
+/* ---------- TABS ---------- */
+document.querySelectorAll('#tabsBar .tab').forEach(t=>{
+  t.addEventListener('click', async ()=>{
+    document.querySelectorAll('#tabsBar .tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
+    currentTab = t.dataset.tab;
+    $('tab-'+currentTab).style.display='block';
+
+    if(currentTab === 'active' || currentTab === 'history'){
+      await refreshRecords();
+    }
+    if(currentTab === 'admin'){
+      await refreshUsers();
+      await refreshCatalog();
+    }
+    render();
+  });
+});
+document.querySelectorAll('.subtab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.subtab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    currentSubtab = t.dataset.sub;
+    $('sub-users').style.display = currentSubtab === 'users' ? 'block' : 'none';
+    $('sub-catalog').style.display = currentSubtab === 'catalog' ? 'block' : 'none';
+    render();
+  });
+});
+
+/* ---------- SERIAL SCAN AUTOFILL ---------- */
+function refreshTypeList(){
+  const types = new Set(['طباخ غاز','طباخ كهربائي','فرن مدمج','سخان مياه غاز','سخان مياه كهربائي','مدفأة غازية','كاشف CO','جهاز منزلي صغير (PEM)']);
+  catalog.forEach(c => { if(c.productType) types.add(c.productType); });
+  $('typeList').innerHTML = [...types].map(t=>`<option value="${escapeHtml(t)}">`).join('');
+}
+function lookupSerial(serial){
+  if(!serial) return null;
+  let best = null;
+  for(const c of catalog){
+    if(c.serialPrefix && serial.toUpperCase().startsWith(c.serialPrefix.toUpperCase())){
+      if(!best || c.serialPrefix.length > best.serialPrefix.length) best = c;
+    }
+  }
+  return best;
+}
+let scanDebounce;
+$('f_pallet').addEventListener('input', ()=>{
+  clearTimeout(scanDebounce);
+  scanDebounce = setTimeout(doScanLookup, 200);
+});
+$('f_pallet').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); doScanLookup(); $('f_model').focus(); }
+});
+function doScanLookup(){
+  const serial = $('f_pallet').value.trim();
+  const hint = $('scanHint');
+  if(!serial){ hint.textContent=''; return; }
+  const match = lookupSerial(serial);
+  if(match){
+    $('f_model').value = match.model;
+    $('f_type').value = match.productType;
+    if(match.quantity !== '' && match.quantity !== undefined) $('f_qty').value = match.quantity;
+    hint.className = 'hint found';
+    hint.textContent = '✅ تم التعرف تلقائيًا: ' + match.model + ' — ' + match.productType;
+  }else{
+    hint.className = 'hint notfound';
+    hint.textContent = 'ℹ️ لا يوجد تطابق في القائمة — يرجى إدخال الموديل والنوع يدويًا';
+  }
+}
+
+/* ===== Camera Barcode/QR Scanner ===== */
+let html5QrCode = null;
+let scannerRunning = false;
+
+function openScanModal(){
+  $('scanModal').classList.add('show');
+  $('retryScanBtn').style.display = 'none';
+  $('scanStatus').className = 'scan-status';
+  $('scanStatus').textContent = 'جارٍ طلب إذن الكاميرا...';
+  startScanner();
+}
+function closeScanModal(){
+  $('scanModal').classList.remove('show');
+  stopScanner();
+}
+
+async function checkPermissionState(){
+  // Returns 'granted' | 'denied' | 'prompt' | 'unknown'
+  try{
+    if(navigator.permissions && navigator.permissions.query){
+      const status = await navigator.permissions.query({ name: 'camera' });
+      return status.state;
+    }
+  }catch(e){ /* some browsers don't support querying 'camera' */ }
+  return 'unknown';
+}
+
+function showScanError(message, opts){
+  $('scanStatus').className = 'scan-status err';
+  $('scanStatus').innerHTML = message;
+  $('retryScanBtn').style.display = (opts && opts.hideRetry) ? 'none' : 'block';
+}
+
+async function startScanner(){
+  $('retryScanBtn').style.display = 'none';
+
+  // 0) Secure-context check — getUserMedia only works on HTTPS or localhost
+  if(!window.isSecureContext){
+    showScanError('⚠️ الكاميرا تعمل فقط عبر رابط HTTPS آمن. الرابط الحالي غير آمن (http). افتح التطبيق عبر رابط https:// لتفعيل الكاميرا.', {hideRetry:true});
+    return;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showScanError('⚠️ متصفحك لا يدعم الوصول إلى الكاميرا من المتصفح. جرّب متصفح Chrome محدّث.', {hideRetry:true});
+    return;
+  }
+  if(typeof Html5Qrcode === 'undefined'){
+    showScanError('⚠️ تعذر تحميل مكتبة المسح — تحقق من الاتصال بالإنترنت ثم أعد المحاولة.');
+    return;
+  }
+
+  // 1) Check existing permission state first (helps give an accurate message)
+  const permState = await checkPermissionState();
+  if(permState === 'denied'){
+    showScanError(
+      '🚫 إذن الكاميرا مرفوض لهذا الموقع تحديدًا (منفصل عن إذن الكاميرا العام للهاتف).<br>' +
+      'لتفعيله يدويًا: افتح ⋮ إعدادات المتصفح ← إعدادات الموقع (Site settings) ← الكاميرا ← اسمح (Allow) لهذا الرابط، ثم اضغط "إعادة المحاولة".',
+      {hideRetry:false}
+    );
+    return;
+  }
+
+  $('scanStatus').className = 'scan-status';
+  $('scanStatus').textContent = 'جارٍ طلب إذن الكاميرا... يرجى الضغط على "سماح" في نافذة المتصفح';
+
+  // 2) Explicitly request getUserMedia first — this reliably triggers the
+  //    native permission prompt (Html5Qrcode.start sometimes fails silently
+  //    if this isn't done first on some Android WebView / in-app browsers).
+  let stream;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+  }catch(err){
+    handleCameraError(err);
+    return;
+  }
+  // Release this trial stream immediately — Html5Qrcode will open its own.
+  stream.getTracks().forEach(t => t.stop());
+
+  // 3) Now start the actual scanner
+  html5QrCode = new Html5Qrcode('scanReader');
+  const config = { fps: 12, qrbox: { width: 240, height: 240 }, aspectRatio: 1 };
+  html5QrCode.start(
+    { facingMode: 'environment' },
+    config,
+    (decodedText)=>{ onScanSuccess(decodedText); },
+    ()=>{ /* per-frame scan failure, ignore */ }
+  ).then(()=>{
+    scannerRunning = true;
+    $('scanStatus').className = 'scan-status';
+    $('scanStatus').textContent = 'وجّه الكاميرا نحو الباركود أو QR البليط';
+  }).catch((err)=>{
+    scannerRunning = false;
+    handleCameraError(err);
+  });
+}
+
+function handleCameraError(err){
+  console.error('Camera start error:', err);
+  const name = (err && err.name) || '';
+  if(name === 'NotAllowedError' || name === 'PermissionDeniedError'){
+    showScanError(
+      '🚫 تم رفض إذن الكاميرا لهذا الموقع.<br>' +
+      'فعّله يدويًا: افتح ⋮ (إعدادات المتصفح) ← إعدادات الموقع ← الكاميرا ← اسمح (Allow)، ثم اضغط "إعادة المحاولة".'
+    );
+  }else if(name === 'NotFoundError' || name === 'DevicesNotFoundError'){
+    showScanError('⚠️ لم يتم العثور على كاميرا على هذا الجهاز.', {hideRetry:true});
+  }else if(name === 'NotReadableError' || name === 'TrackStartError'){
+    showScanError('⚠️ الكاميرا مستخدمة حاليًا من تطبيق آخر. أغلق التطبيقات الأخرى التي تستخدم الكاميرا وأعد المحاولة.');
+  }else if(name === 'OverconstrainedError'){
+    showScanError('⚠️ تعذر تشغيل الكاميرا الخلفية. أعد المحاولة.');
+  }else{
+    showScanError('⚠️ تعذر الوصول إلى الكاميرا. تحقق من الأذونات وأعد المحاولة.<br><span style="font-size:10.5px">' + (name || 'خطأ غير معروف') + '</span>');
+  }
+}
+
+function stopScanner(){
+  if(html5QrCode && scannerRunning){
+    html5QrCode.stop().then(()=>{
+      html5QrCode.clear();
+      html5QrCode = null;
+      scannerRunning = false;
+    }).catch(()=>{
+      html5QrCode = null;
+      scannerRunning = false;
+    });
+  }
+}
+function onScanSuccess(decodedText){
+  if(!scannerRunning) return; // avoid double-fire while stopping
+  scannerRunning = false;
+  $('f_pallet').value = decodedText.trim();
+  doScanLookup();
+  closeScanModal();
+  showToast('✅ تم مسح الرقم: ' + decodedText.trim());
+  $('f_model').focus();
+}
+$('openCamBtn').addEventListener('click', openScanModal);
+$('closeScanBtn').addEventListener('click', closeScanModal);
+$('retryScanBtn').addEventListener('click', startScanner);
+$('scanModal').addEventListener('click', (e)=>{ if(e.target.id === 'scanModal') closeScanModal(); });
+
+/* ---------- ISOLATE ---------- */
+$('btnIsolate').addEventListener('click', async ()=>{
+  const pallet = $('f_pallet').value.trim();
+  const model = $('f_model').value.trim();
+  const type = $('f_type').value.trim();
+  const qty = $('f_qty').value.trim();
+  const notes = $('f_notes').value.trim();
+  if(!pallet || !model || !type){ showToast('⚠️ يرجى تعبئة رقم البليط، الموديل، ونوع المنتج'); return; }
+
+  const btn = $('btnIsolate');
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+
+  const rec = {
+    id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+    palletNumber: pallet, model, quantity: qty, productType: type, isolateNotes: notes,
+    isolatedAt: new Date().toISOString(),
+    isolatedBy: currentUser.fullName, isolatedByUsername: currentUser.username,
+    status: STATUS_ISOLATED, releasedAt: '', releasedBy: '', releasedByUsername:'', releaseNotes: ''
+  };
+  const ok = await safeAppend('records', recordToRow(rec), 'isolate');
+  btn.disabled = false; btn.textContent = '🔒 تسجيل عزل البليط';
+
+  if(ok){
+    showToast('✅ تم عزل البليط ' + pallet);
+    $('f_pallet').value=''; $('f_model').value=''; $('f_type').value=''; $('f_qty').value=''; $('f_notes').value='';
+    $('scanHint').textContent='';
+    await refreshRecords();
+    render();
+  }
+});
+
+/* ---------- RELEASE ---------- */
+function openReleaseModal(id){
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return;
+  releaseTargetId = id;
+  $('releaseModalSub').textContent = 'البليط ' + rec.palletNumber + ' — موديل ' + rec.model;
+  $('releaseNotes').value = '';
+  $('releaseModal').classList.add('show');
+}
+$('cancelRelease').addEventListener('click', ()=>{ $('releaseModal').classList.remove('show'); releaseTargetId = null; });
+$('confirmRelease').addEventListener('click', async ()=>{
+  if(!releaseTargetId) return;
+  const rec = records.find(r=>r.id===releaseTargetId);
+  if(!rec) return;
+  const btn = $('confirmRelease');
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+
+  const updates = {
+    'الحالة': STATUS_RELEASED,
+    'تاريخ_ووقت_التحرير': new Date().toISOString(),
+    'محرر_اسم_الدخول': currentUser.username,
+    'محرر_الاسم_الكامل': currentUser.fullName,
+    'ملاحظات_التحرير': $('releaseNotes').value.trim()
+  };
+  const ok = await safeUpdate('records', 'معرف', rec.id, updates, 'release');
+  btn.disabled = false; btn.textContent = '✅ تأكيد التحرير';
+  if(ok){
+    showToast('✅ تم تحرير البليط ' + rec.palletNumber);
+    $('releaseModal').classList.remove('show'); releaseTargetId = null;
+    await refreshRecords();
+    render();
+  }
+});
+
+/* ---------- ADMIN: USERS ---------- */
+$('btnAddUser').addEventListener('click', async ()=>{
+  const fullName = $('au_fullname').value.trim();
+  const username = $('au_username').value.trim().toLowerCase();
+  const pin = $('au_pin').value.trim();
+  const role = $('au_role').value;
+  if(!fullName || !username || pin.length!==4 || !/^\d{4}$/.test(pin)){
+    showToast('⚠️ يرجى تعبئة كل الحقول (رمز سري 4 أرقام)'); return;
+  }
+  if(authUsers.some(u=>u.username===username)){ showToast('⚠️ اسم الدخول مستعمل مسبقًا'); return; }
+  const ok = await safeAppend('users', userToRow({fullName, username, pin, role, active:true}), 'addUser');
+  if(ok){
+    showToast('✅ تمت إضافة الحساب');
+    $('au_fullname').value=''; $('au_username').value=''; $('au_pin').value='';
+    await refreshUsers();
+    render();
+  }
+});
+async function toggleUserActive(username){
+  const u = authUsers.find(x=>x.username===username);
+  if(!u) return;
+  const newActive = u.active === false ? true : false;
+  const ok = await safeUpdate('users', 'اسم_الدخول', username, {'نشط': newActive}, 'toggleUser');
+  if(ok){ await refreshUsers(); render(); }
+}
+async function deleteUser(username){
+  const ok = await safeDelete('users', 'اسم_الدخول', username, 'deleteUser');
+  if(ok){ await refreshUsers(); render(); }
+}
+
+/* ---------- ADMIN: CATALOG ---------- */
+$('btnAddCatalog').addEventListener('click', async ()=>{
+  const serialPrefix = $('ac_prefix').value.trim();
+  const model = $('ac_model').value.trim();
+  const qty = $('ac_qty').value.trim();
+  const productType = $('ac_type').value.trim();
+  if(!serialPrefix || !model || !productType){ showToast('⚠️ يرجى تعبئة كل الحقول'); return; }
+  const ok = await safeAppend('catalog', catalogToRow({serialPrefix, model, quantity:qty, productType}), 'addCatalog');
+  if(ok){
+    showToast('✅ تمت الإضافة للقائمة');
+    $('ac_prefix').value=''; $('ac_model').value=''; $('ac_qty').value=''; $('ac_type').value='';
+    await refreshCatalog();
+    render();
+  }
+});
+async function deleteCatalogEntry(serialPrefix){
+  const ok = await safeDelete('catalog', 'رقم_البليط_أو_البادئة', serialPrefix, 'deleteCatalog');
+  if(ok){ await refreshCatalog(); render(); }
+}
+
+/* ---------- RENDER ---------- */
+function render(){
+  const active = records.filter(r=>r.status===STATUS_ISOLATED);
+  $('countActive').textContent = active.length;
+
+  if(currentTab === 'active'){
+    const el = $('activeList');
+    el.innerHTML = active.length===0
+      ? '<div class="empty"><div class="icon">✅</div><p>لا توجد بليط معزولة حاليًا</p></div>'
+      : active.map(r=>`
+        <div class="card">
+          <div class="card-top"><div class="card-model">${escapeHtml(r.model)}</div><div class="card-pallet">${escapeHtml(r.palletNumber)}</div></div>
+          <div class="card-meta">
+            <div>النوع: <b>${escapeHtml(r.productType)}</b></div>
+            <div>الكمية: <b>${escapeHtml(String(r.quantity||'—'))}</b></div>
+            <div>عزلها: <b>${escapeHtml(r.isolatedBy)}</b></div>
+            <div>🕒 وقت العزل: <b>${fmtDateTime(r.isolatedAt)}</b></div>
+          </div>
+          ${r.isolateNotes ? `<div class="card-notes">${escapeHtml(r.isolateNotes)}</div>` : ''}
+          <div class="card-footer"><button class="btn btn-release" onclick="openReleaseModal('${r.id}')">🔓 تحرير البليط</button></div>
+        </div>`).join('');
+  }
+
+  if(currentTab === 'history'){
+    const el = $('historyList');
+    el.innerHTML = records.length===0
+      ? '<div class="empty"><div class="icon">📋</div><p>السجل فارغ حاليًا</p></div>'
+      : records.map(r=>{
+        const isReleased = r.status===STATUS_RELEASED;
+        return `<div class="card ${isReleased?'released':''}">
+          <div class="card-top"><div class="card-model">${escapeHtml(r.model)}</div><div class="card-pallet">${escapeHtml(r.palletNumber)}</div></div>
+          <div class="card-meta">
+            <div>النوع: <b>${escapeHtml(r.productType)}</b></div>
+            <div>الكمية: <b>${escapeHtml(String(r.quantity||'—'))}</b></div>
+            <div>الحالة: <b>${isReleased?'محررة':'معزولة'}</b></div>
+            <div>عزلها: <b>${escapeHtml(r.isolatedBy)}</b></div>
+            <div style="grid-column:1/3">🕒 وقت العزل: <b>${fmtDateTime(r.isolatedAt)}</b></div>
+            ${isReleased ? `
+            <div>حررها: <b>${escapeHtml(r.releasedBy)}</b></div>
+            <div>🕒 وقت التحرير: <b>${fmtDateTime(r.releasedAt)}</b></div>
+            <div style="grid-column:1/3">⏱ مدة العزل: <b>${durationText(r.isolatedAt, r.releasedAt)}</b></div>` : ''}
+          </div>
+          ${r.isolateNotes ? `<div class="card-notes">🔴 عزل: ${escapeHtml(r.isolateNotes)}</div>` : ''}
+          ${isReleased && r.releaseNotes ? `<div class="card-notes">🟢 تحرير: ${escapeHtml(r.releaseNotes)}</div>` : ''}
+        </div>`;
+      }).join('');
+  }
+
+  if(currentTab === 'admin' && currentUser && currentUser.role === 'supervisor'){
+    const uEl = $('usersList');
+    uEl.innerHTML = authUsers.length === 0 ? '<div class="empty"><p>لا يوجد مستخدمون بعد</p></div>' :
+      authUsers.map(u=>`
+        <div class="list-row ${u.active===false?'inactive-row':''}">
+          <div class="grow">
+            <div class="name">${escapeHtml(u.fullName)} ${u.username===currentUser.username?'(أنت)':''}</div>
+            <div class="sub2">@${escapeHtml(u.username)} — ${u.role==='supervisor'?'مشرف':'مفتش'} ${u.active===false?'— معطّل':''}</div>
+          </div>
+          <button class="icon-btn ${u.active===false?'ok':''}" onclick="toggleUserActive('${u.username}')">${u.active===false?'تفعيل':'تعطيل'}</button>
+          ${u.username!==currentUser.username ? `<button class="icon-btn danger" onclick="if(confirm('حذف هذا الحساب نهائيًا؟'))deleteUser('${u.username}')">حذف</button>` : ''}
+        </div>`).join('');
+
+    const cEl = $('catalogList');
+    cEl.innerHTML = catalog.length === 0 ? '<div class="empty"><p>لا توجد بيانات بعد — أضفها هنا أو مباشرة في ورقة "الموديلات"</p></div>' :
+      catalog.map(c=>`
+        <div class="list-row">
+          <div class="grow">
+            <div class="name">${escapeHtml(c.serialPrefix)}</div>
+            <div class="sub2">${escapeHtml(c.model)} — ${escapeHtml(String(c.quantity||'—'))} وحدة — ${escapeHtml(c.productType)}</div>
+          </div>
+          <button class="icon-btn danger" onclick="if(confirm('حذف هذا العنصر؟'))deleteCatalogEntry('${escapeHtml(c.serialPrefix)}')">حذف</button>
+        </div>`).join('');
+  }
+}
+
+/* ---------- CSV EXPORT ---------- */
+$('exportBtn').addEventListener('click', ()=>{
+  if(records.length===0){ showToast('لا توجد بيانات للتصدير'); return; }
+  const headers = ['رقم البليط','الموديل','الكمية','نوع المنتج','الحالة','عزل بواسطة','وقت العزل','ملاحظات العزل','حرر بواسطة','وقت التحرير','ملاحظات التحرير'];
+  const rows = records.map(r=>[
+    r.palletNumber, r.model, r.quantity, r.productType, r.status,
+    r.isolatedBy, fmtDateTime(r.isolatedAt), r.isolateNotes||'',
+    r.releasedBy||'', r.releasedAt?fmtDateTime(r.releasedAt):'', r.releaseNotes||''
+  ]);
+  const csv = '\uFEFF' + [headers, ...rows].map(row => row.map(cell => '"' + String(cell).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'سجل_عزل_البليط_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+});
+
+/* ---------- DIAGNOSTICS ---------- */
+$('btnDiag').addEventListener('click', async ()=>{
+  const out = $('diagResult');
+  const btn = $('btnDiag');
+  btn.disabled = true;
+  out.style.color = 'var(--ink-soft)';
+  out.textContent = 'جاري الفحص...';
+  const lines = [];
+  for(const s of [['users','المفتشون'], ['catalog','الموديلات'], ['records','السجل']]){
+    try{
+      const rows = await gasList(s[0]);
+      lines.push('✅ ورقة "' + s[1] + '": متصلة (' + rows.length + ' صف).');
+    }catch(e){
+      lines.push('❌ ورقة "' + s[1] + '" فشلت: ' + (e && e.message ? e.message : String(e)));
+    }
+  }
+  if(lines.every(l=>l.startsWith('✅'))){
+    lines.push('');
+    lines.push('كل شيء متصل بشكل صحيح ✅');
+  }else{
+    lines.push('');
+    lines.push('تحقق من: الاتصال بالإنترنت، أو أن رابط Apps Script لا يزال منشورًا وصلاحية الوصول "Tout le monde".');
+  }
+  out.textContent = lines.join('\n');
+  out.style.color = lines.some(l=>l.startsWith('❌')) ? 'var(--red)' : 'var(--green)';
+  btn.disabled = false;
+});
+
+/* ---------- INIT ---------- */
+(async function init(){
+  const loggedIn = await initAuth();
+  if(loggedIn){ await bootMainApp(); }
+  else{ renderLoginScreen(); }
+})();
+</script>
+
+</body>
+</html>
