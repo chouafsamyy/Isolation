@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -504,6 +506,13 @@ async function gasList(sheetKey){
   if(data.error) throw new Error(data.error);
   return data.rows || [];
 }
+async function gasCheckDuplicate(pallet){
+  const res = await fetch(GAS_URL + '?action=checkDuplicate&sheet=records&pallet=' + encodeURIComponent(pallet));
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  return data; // { active: bool, isolatedBy?: string }
+}
 async function gasAppend(sheetKey, row){
   const res = await fetch(GAS_URL, {
     method: 'POST',
@@ -541,6 +550,10 @@ async function gasDelete(sheetKey, column, value){
 async function safeList(sheetKey, label){
   try{ return await withRetry(() => gasList(sheetKey), 'list:'+label); }
   catch(e){ console.error(e); showToast('⚠️ تعذر الاتصال بقاعدة البيانات — تحقق من الإنترنت'); return []; }
+}
+async function safeCheckDuplicate(pallet, label){
+  try{ return await withRetry(() => gasCheckDuplicate(pallet), 'checkDuplicate:'+label); }
+  catch(e){ console.error(e); showToast('⚠️ تعذر الاتصال بقاعدة البيانات — تحقق من الإنترنت'); return null; }
 }
 async function safeAppend(sheetKey, row, label){
   try{ await withRetry(() => gasAppend(sheetKey, row), 'append:'+label); return true; }
@@ -1138,13 +1151,18 @@ async function doIsolateSave(pallet, model, type, qty){
   const btn = $('btnIsolate');
   btn.disabled = true; btn.textContent = 'جاري التحقق...';
 
-  // Re-fetch latest records to reliably detect duplicates before saving.
-  await refreshRecords();
-  const duplicate = records.find(r => r.status === STATUS_ISOLATED && String(r.palletNumber).trim() === pallet);
-  if(duplicate){
+  // Check for a duplicate before saving — same rule as before (pallet already
+  // isolated), but via a targeted server-side check instead of fetching the
+  // entire records sheet just to look for one pallet number.
+  const dupCheck = await safeCheckDuplicate(pallet, 'isolate');
+  if(dupCheck === null){
+    // Connection error already surfaced via toast inside safeCheckDuplicate.
     btn.disabled = false; btn.textContent = '🔒 تسجيل عزل البليط';
-    showToast('⚠️ هذه البليطة معزولة مسبقًا بواسطة: ' + duplicate.isolatedBy);
-    render();
+    return;
+  }
+  if(dupCheck.active){
+    btn.disabled = false; btn.textContent = '🔒 تسجيل عزل البليط';
+    showToast('⚠️ عزلها مسبقاً: ' + dupCheck.isolatedBy);
     return;
   }
 
@@ -1162,7 +1180,8 @@ async function doIsolateSave(pallet, model, type, qty){
 
   // If this pallet's code wasn't recognized from the "الموديلات" catalog,
   // save the first 6 digits there now (with what the user typed manually),
-  // so the same series is auto-recognized next time.
+  // so the same series is auto-recognized next time. Runs in the background
+  // (not awaited) so it doesn't delay the form being ready for the next pallet.
   if(ok){
     const existingMatch = lookupSerial(pallet);
     if(!existingMatch){
@@ -1170,8 +1189,8 @@ async function doIsolateSave(pallet, model, type, qty){
       if(lead){
         const already = catalog.some(c => c.serialPrefix && last6Digits(c.serialPrefix) === lead);
         if(!already){
-          const catalogOk = await safeAppend('catalog', catalogToRow({serialPrefix: lead, model, quantity: qty, productType: type}), 'autoAddCatalog');
-          if(catalogOk) await refreshCatalog();
+          safeAppend('catalog', catalogToRow({serialPrefix: lead, model, quantity: qty, productType: type}), 'autoAddCatalog')
+            .then(catalogOk => { if(catalogOk) refreshCatalog(); });
         }
       }
     }
@@ -1180,12 +1199,18 @@ async function doIsolateSave(pallet, model, type, qty){
   btn.disabled = false; btn.textContent = '🔒 تسجيل عزل البليط';
 
   if(ok){
+    // Update local state immediately instead of re-fetching the whole sheet
+    // (which is what made the next isolate feel slow) — the saved record is
+    // exactly what we just wrote, so this reflects the server state without
+    // an extra round trip. Tab switches / manual actions elsewhere still pull
+    // the authoritative copy from the sheet as before.
+    records.unshift(rec);
+
     showToast('✅ تم عزل البليط ' + pallet);
     $('f_pallet').value=''; $('f_notes').value='';
     $('scanHint').textContent='';
     saveDraftPallet('');
     resetIsolateFormState();
-    await refreshRecords();
     render();
   }
 }
