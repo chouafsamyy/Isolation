@@ -53,7 +53,6 @@
 
   .container{max-width:640px;margin:0 auto;padding:16px;}
 
-  /* Session bar */
   .session-bar{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     background:var(--panel); border:1px solid var(--line); border-radius:10px;
@@ -100,7 +99,6 @@
   .hint.notfound{color:var(--ink-soft);}
   .hint.pending{color:var(--amber-dark);}
 
-  /* Confirmation modal pallet echo */
   .confirm-echo{
     background:#f3f1e9; border:1.5px dashed var(--line); border-radius:10px;
     padding:12px; text-align:center; margin:10px 0 4px;
@@ -108,14 +106,12 @@
   .confirm-echo .num{font-family:'Cairo',sans-serif;font-weight:900;font-size:20px;letter-spacing:1px;color:var(--ink);}
   .confirm-msg{font-size:13px;line-height:1.7;color:var(--ink-soft);margin-top:8px;}
 
-  /* Search / filter row on the active tab */
   .filter-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);margin-bottom:14px;}
   .filter-row{display:flex;gap:8px;margin-bottom:8px;}
   .filter-row:last-child{margin-bottom:0;}
   .filter-row select{flex:1;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Tajawal',sans-serif;font-size:13.5px;font-weight:600;color:var(--ink);background:#fff;}
   .clear-filter-btn{flex:0 0 auto;background:transparent;color:var(--ink-soft);border:1.5px solid var(--line);border-radius:9px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;}
 
-  /* Scan row with camera button */
   .scan-row{display:flex;gap:8px;align-items:stretch;}
   .scan-row input{flex:1;min-width:0;}
   .cam-btn{
@@ -125,7 +121,6 @@
   }
   .cam-btn:active{background:var(--amber-dark);}
 
-  /* Camera scan modal */
   #scanModal .modal{padding:16px;max-width:640px;}
   .scan-video-wrap{
     position:relative; width:100%; border-radius:12px; overflow:hidden;
@@ -197,22 +192,16 @@
     white-space:nowrap;
   }
   .banner .refresh-btn:active{transform:scale(0.95);}
-  
-  .loading{text-align:center;padding:30px;color:var(--ink-soft);font-size:13px;}
-  .spin{width:20px;height:20px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--amber-dark);animation:sp 0.8s linear infinite;margin:0 auto 10px;}
-  @keyframes sp{to{transform:rotate(360deg);}}
 
   .footer-links{text-align:center;margin-top:6px;}
   .footer-links button{background:none;border:none;color:var(--ink-soft);font-size:12px;text-decoration:underline;cursor:pointer;font-family:'Tajawal',sans-serif;}
 
-  /* Login screen */
   .login-wrap{max-width:400px;margin:40px auto;padding:0 16px;}
   .login-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 20px;box-shadow:var(--shadow);}
   .login-card h2{font-family:'Cairo',sans-serif;font-size:18px;margin:0 0 4px;}
   .login-card .sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:18px;}
   .pin-input{letter-spacing:8px;font-size:20px !important;text-align:center;font-weight:800 !important;}
 
-  /* Supervisor rows */
   .list-row{
     display:flex; align-items:center; gap:8px; padding:10px 8px; border:1px solid var(--line);
     border-radius:10px; margin-bottom:8px; background:#fff; flex-wrap:wrap;
@@ -228,7 +217,6 @@
   .icon-btn.ok{color:var(--green);border-color:#c4d9c7;}
   .inactive-row{opacity:0.5;}
   
-  /* Performance indicator */
   .perf-indicator{
     font-size:10px;
     color:var(--ink-soft);
@@ -250,7 +238,6 @@
 <div class="login-wrap" id="loginScreen" style="display:none">
   <div class="banner">يمكنكم الاستعانة بهاتف مفتش آخر في حال عدم توفركم على هاتف أو اتصال بالإنترنت.</div>
 
-  <!-- First-run setup -->
   <div class="login-card" id="setupCard" style="display:none">
     <h2>🛠 إعداد أولي — إنشاء أول حساب مشرف</h2>
     <div class="sub">لا يوجد بعد أي مستخدم مسجّل في هذا التطبيق. أنشئ حساب المشرف الأول لتتمكن بعدها من إضافة المفتشين.</div>
@@ -263,7 +250,6 @@
     <button class="btn btn-primary" id="btnSetup">إنشاء حساب المشرف والدخول</button>
   </div>
 
-  <!-- Normal login -->
   <div class="login-card" id="loginCard" style="display:none">
     <h2>👤 تسجيل الدخول</h2>
     <div class="sub">اختر اسمك وأدخل رمزك السري للمتابعة</div>
@@ -373,9 +359,8 @@
     <div class="footer-links"><button id="exportBtn">⬇ تصدير السجل كملف CSV</button></div>
   </div>
 
-  <!-- ADMIN TAB (supervisor only) -->
+  <!-- ADMIN TAB -->
   <div class="tab-content" id="tab-admin" style="display:none">
-    <!-- Users management -->
     <div id="sub-users">
       <div class="panel">
         <h3>إضافة مفتش / مشرف جديد</h3>
@@ -454,7 +439,9 @@
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-// ===================== التكوين الأساسي =====================
+// ===================================================================
+// ⚠️ قم بتغيير هذا الرابط إلى رابط مشروع Apps Script الخاص بك ⚠️
+// ===================================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxnJJzDhXz7TG51u0TycZe6woOyJS1JQtpYJQhB_TGP_U2giGWoeuLqRYj669ztC48Q/exec';
 
 const STATUS_ISOLATED = 'معزولة';
@@ -715,7 +702,7 @@ async function refreshProductTypes(force = false) {
     return productTypes;
 }
 
-// ===================== تحديث محلي =====================
+// ===================== تحديث محلي فوري =====================
 function updateRecordsLocally(record, action) {
     if (action === 'add') {
         records.unshift(record);
@@ -724,8 +711,6 @@ function updateRecordsLocally(record, action) {
         if (index !== -1) {
             records[index] = record;
         }
-    } else if (action === 'delete') {
-        records = records.filter(r => r.id !== record.id);
     }
     setCachedData('records', records.map(r => recordToRow(r)));
     updateCacheIndicator();
@@ -920,11 +905,6 @@ function restoreDraftPallet(){
   }
 }
 
-function setProductFieldsLocked(locked){
-  $('f_model').disabled = locked;
-  $('f_type').disabled = locked;
-}
-
 function resetIsolateFormState(){
   matchedCatalogEntry = null;
   newProductConfirmed = false;
@@ -991,81 +971,105 @@ function proceedAfterPalletEntry(){
   }
 }
 
-// ===================== دوال العزل =====================
+// ===================================================================
+// ⚡ دالة العزل المحسنة - الأسرع والأخف ⚡
+// ===================================================================
 async function doIsolateSave(pallet, model, type, qty) {
     const notes = $('f_notes').value.trim();
     const btn = $('btnIsolate');
+    
+    // تعطيل الزر ومنع الضغط المتكرر
     btn.disabled = true;
-    btn.textContent = 'جاري التحقق...';
-
-    const dupCheck = await safeCheckDuplicate(pallet, 'isolate');
-    if (dupCheck === null) {
-        btn.disabled = false;
-        btn.textContent = '🔒 تسجيل عزل البليط';
-        return;
-    }
-    if (dupCheck.active) {
-        btn.disabled = false;
-        btn.textContent = '🔒 تسجيل عزل البليط';
-        showToast('⚠️ هذه البليطة معزولة مسبقًا بواسطة: ' + dupCheck.isolatedBy);
-        return;
-    }
-
-    btn.textContent = 'جاري الحفظ...';
-
-    const rec = {
-        id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-        palletNumber: pallet,
-        model,
-        quantity: qty,
-        productType: type,
-        isolateNotes: notes,
-        isolatedAt: new Date().toISOString(),
-        isolatedBy: currentUser.fullName,
-        isolatedByUsername: currentUser.username,
-        isolatedByPosition: currentUser.position || '',
-        status: STATUS_ISOLATED,
-        releasedAt: '',
-        releasedBy: '',
-        releasedByUsername: '',
-        releasedByPosition: '',
-        releaseNotes: ''
-    };
-
-    const ok = await safeAppend('records', recordToRow(rec), 'isolate');
-
-    if (ok) {
-        updateRecordsLocally(rec, 'add');
-        
-        if (!lookupSerial(pallet)) {
-            const lead = extractLead6Digits(pallet);
-            if (lead) {
-                const already = catalog.some(c => c.serialPrefix && last6Digits(c.serialPrefix) === lead);
-                if (!already) {
-                    safeAppend('catalog', catalogToRow({
-                        serialPrefix: lead,
-                        model,
-                        quantity: qty,
-                        productType: type
-                    }), 'autoAddCatalog')
-                    .then(catalogOk => {
-                        if (catalogOk) refreshCatalog(true).catch(() => {});
-                    });
-                }
-            }
+    btn.textContent = '⏳ جاري العزل...';
+    
+    try {
+        // 1. التحقق من التكرار (طلب واحد)
+        const dupCheck = await safeCheckDuplicate(pallet, 'isolate');
+        if (dupCheck === null) {
+            btn.disabled = false;
+            btn.textContent = '🔒 تسجيل عزل البليط';
+            return;
+        }
+        if (dupCheck.active) {
+            btn.disabled = false;
+            btn.textContent = '🔒 تسجيل عزل البليط';
+            showToast('⚠️ هذه البليطة معزولة مسبقًا بواسطة: ' + dupCheck.isolatedBy);
+            return;
         }
 
-        showToast('✅ تم عزل البليط ' + pallet);
-        $('f_pallet').value = '';
-        $('f_notes').value = '';
-        $('scanHint').textContent = '';
-        saveDraftPallet('');
-        resetIsolateFormState();
-        render();
-    }
+        // 2. إنشاء السجل
+        const rec = {
+            id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+            palletNumber: pallet,
+            model,
+            quantity: qty,
+            productType: type,
+            isolateNotes: notes,
+            isolatedAt: new Date().toISOString(),
+            isolatedBy: currentUser.fullName,
+            isolatedByUsername: currentUser.username,
+            isolatedByPosition: currentUser.position || '',
+            status: STATUS_ISOLATED,
+            releasedAt: '',
+            releasedBy: '',
+            releasedByUsername: '',
+            releasedByPosition: '',
+            releaseNotes: ''
+        };
 
-    btn.disabled = false;
-    btn.textContent = '🔒 تسجيل عزل البليط';
+        // 3. حفظ البيانات (طلب ثاني)
+        btn.textContent = '💾 حفظ...';
+        const ok = await safeAppend('records', recordToRow(rec), 'isolate');
+
+        if (ok) {
+            // ✅ تحديث محلي فوري (بدون طلب شبكة)
+            updateRecordsLocally(rec, 'add');
+            
+            // ✅ تحديث الكتالوج في الخلفية (بدون انتظار)
+            if (!lookupSerial(pallet)) {
+                const lead = extractLead6Digits(pallet);
+                if (lead) {
+                    const already = catalog.some(c => c.serialPrefix && last6Digits(c.serialPrefix) === lead);
+                    if (!already) {
+                        // يتم في الخلفية - لا ننتظر النتيجة
+                        safeAppend('catalog', catalogToRow({
+                            serialPrefix: lead,
+                            model,
+                            quantity: qty,
+                            productType: type
+                        }), 'autoAddCatalog');
+                    }
+                }
+            }
+
+            // ✅ تحديث الواجهة فوراً
+            showToast('✅ تم عزل البليط ' + pallet);
+            
+            // تنظيف النموذج
+            $('f_pallet').value = '';
+            $('f_notes').value = '';
+            $('scanHint').textContent = '';
+            saveDraftPallet('');
+            resetIsolateFormState();
+            
+            // ✅ تحديث العداد و القائمة (من البيانات المحلية، بدون طلب شبكة)
+            render();
+            
+            // ✅ تحديث البيانات في الخلفية (بعد 3 ثوانٍ، بدون إزعاج المستخدم)
+            setTimeout(() => {
+                refreshRecords(true).catch(() => {});
+            }, 3000);
+        } else {
+            showToast('⚠️ فشل العزل، حاول مجددًا');
+        }
+        
+    } catch (error) {
+        console.error('Isolation error:', error);
+        showToast('⚠️ حدث خطأ أثناء العزل');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔒 تسجيل عزل البليط';
+    }
 }
 
 // ===================== دوال الكاميرا =====================
@@ -1397,12 +1401,14 @@ async function bootMainApp() {
     restoreDraftPallet();
     updateCacheIndicator();
     
+    // تحديث الخلفية بعد 5 ثواني
     setTimeout(() => {
         refreshRecords(true).then(() => render()).catch(() => {});
     }, 5000);
 }
 
 // ===================== مستمعات الأحداث =====================
+
 // تسجيل الدخول
 $('btnSetup').addEventListener('click', async ()=>{
   const fullName = $('su_fullname').value.trim();
@@ -1649,7 +1655,7 @@ $('clearHistoryFilters').addEventListener('click', ()=>{
   render();
 });
 
-// إدارة المستخدمين (المشرف)
+// إدارة المستخدمين
 $('btnAddUser').addEventListener('click', async ()=>{
   const fullName = $('au_fullname').value.trim();
   const username = $('au_username').value.trim().toLowerCase();
