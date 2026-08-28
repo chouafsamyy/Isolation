@@ -1251,24 +1251,12 @@ async function doIsolateSave(pallet, model, type, qty){
   const dupCheck = await safeCheckDuplicate(pallet, 'isolate');
   if(dupCheck === null){
     // Connection error already surfaced via toast inside safeCheckDuplicate.
-    btn.disabled = الأفضل توضيحها تقنيًا على أنها خط خفيف لا يؤثر على سرعة أو أداء الموقع:
-
-أريد إجراء التعديلات التالية على واجهة الموقع:
-
-1. تعديل نمط الكتابة الموضح في الصورة إلى خط بسيط وخفيف ومتوافق مع الموقع، بحيث لا يؤثر على سرعة التحميل أو أداء الموقع، مع جعل النصوص متمركزة في المنتصف.
-
-2. نقل خيار تحميل Excel ليكون مباشرة أسفل خانة البحث في السجل.
-
-3. إضافة خيار تحميل قائمة المنتجات المعزولة بصيغة Excel أيضًا، ويكون أسفل خانة البحث مباشرة.
-
-4. تكون صلاحية تحميل ملفات Excel، سواء الخاصة بـ السجل أو المنتجات المعزولة، متاحة للمشرفين فقط، ولا تظهر للمستخدمين العاديين.
-
-5. الحفاظ على جميع الوظائف الحالية وعدم إجراء أي تعديلات غير مطلوبة على التصميم أو قاعدة البيانات أو منطق عمل التطبيق.; btn.textContent = '🔒 تسجيل عزل البليط';
+    btn.disabled = false; btn.textContent = '🔒 تسجيل عزل البليط';
     return;
   }
   if(dupCheck.active){
     btn.disabled = false; btn.textContent = '🔒 تسجيل عزل البليط';
-    showToast('⚠️ معزولة سابقا : ' + dupCheck.isolatedBy);
+    showToast('⚠️ عزلها سابقا المفتش : ' + dupCheck.isolatedBy);
     return;
   }
 
@@ -1802,6 +1790,7 @@ $('exportActiveBtn').addEventListener('click', ()=>{
   const loggedIn = await initAuth();
   if(loggedIn){ await bootMainApp(); }
   else{ renderLoginScreen(); }
+})();
 </script>
 
 </body>
