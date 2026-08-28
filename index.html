@@ -42,15 +42,16 @@
     position:relative;
     overflow:hidden;
     border-radius: 0 0 28px 28px;
+    text-align:center;
   }
   header .tag{
     display:inline-block; text-align:center; line-height:1.5;
     background:var(--amber); color:#23262b;
-    font-family:'Cairo',sans-serif; font-weight:900; font-size:12px; letter-spacing:0.5px;
+    font-family:'Tajawal',sans-serif; font-weight:500; font-size:12px; letter-spacing:0.3px;
     padding:5px 10px; border-radius:3px; margin-bottom:10px;
   }
-  header h1{font-family:'Cairo',sans-serif;font-weight:900;font-size:22px;margin:0 0 4px;line-height:1.3;}
-  header p{margin:0;color:#c9c6ba;font-size:13px;font-weight:500;}
+  header h1{font-family:'Tajawal',sans-serif;font-weight:700;font-size:22px;margin:0 0 4px;line-height:1.3;}
+  header p{margin:0;color:#c9c6ba;font-size:13px;font-weight:400;}
 
   .container{
     max-width:640px;margin:-20px auto 0;padding:20px 16px 16px;
@@ -337,6 +338,7 @@
         <button type="button" class="clear-filter-btn" id="clearActiveFilters">مسح الفلاتر</button>
       </div>
     </div>
+    <div class="footer-links" id="exportActiveWrap" style="display:none;margin-bottom:10px"><button id="exportActiveBtn">⬇ تحميل قائمة المعزولة Excel</button></div>
     <div id="activeList"></div>
   </div>
 
@@ -354,8 +356,8 @@
         <button type="button" class="clear-filter-btn" id="clearHistoryFilters">مسح الفلاتر</button>
       </div>
     </div>
+    <div class="footer-links" id="exportWrap" style="display:none;margin-bottom:10px"><button id="exportBtn">⬇ تحميل السجل Excel</button></div>
     <div id="historyList"></div>
-    <div class="footer-links"><button id="exportBtn">⬇ تحميل السجل Excel</button></div>
   </div>
 
   <!-- ADMIN TAB (supervisor only) -->
@@ -844,6 +846,8 @@ async function bootMainApp(){
   $('sessionRoleBadge').textContent = currentUser.position || '';
   $('sessionRoleBadge').className = 'role-badge' + (currentUser.position === 'Superviseur' ? ' supervisor' : '');
   $('adminTabBtn').style.display = currentUser.position === 'Superviseur' ? 'block' : 'none';
+  $('exportWrap').style.display = currentUser.position === 'Superviseur' ? 'block' : 'none';
+  $('exportActiveWrap').style.display = currentUser.position === 'Superviseur' ? 'block' : 'none';
 
   await refreshCatalog();
   await refreshRecords();
@@ -1247,12 +1251,24 @@ async function doIsolateSave(pallet, model, type, qty){
   const dupCheck = await safeCheckDuplicate(pallet, 'isolate');
   if(dupCheck === null){
     // Connection error already surfaced via toast inside safeCheckDuplicate.
-    btn.disabled = false; btn.textContent = '🔒 تسجيل عزل البليط';
+    btn.disabled = الأفضل توضيحها تقنيًا على أنها خط خفيف لا يؤثر على سرعة أو أداء الموقع:
+
+أريد إجراء التعديلات التالية على واجهة الموقع:
+
+1. تعديل نمط الكتابة الموضح في الصورة إلى خط بسيط وخفيف ومتوافق مع الموقع، بحيث لا يؤثر على سرعة التحميل أو أداء الموقع، مع جعل النصوص متمركزة في المنتصف.
+
+2. نقل خيار تحميل Excel ليكون مباشرة أسفل خانة البحث في السجل.
+
+3. إضافة خيار تحميل قائمة المنتجات المعزولة بصيغة Excel أيضًا، ويكون أسفل خانة البحث مباشرة.
+
+4. تكون صلاحية تحميل ملفات Excel، سواء الخاصة بـ السجل أو المنتجات المعزولة، متاحة للمشرفين فقط، ولا تظهر للمستخدمين العاديين.
+
+5. الحفاظ على جميع الوظائف الحالية وعدم إجراء أي تعديلات غير مطلوبة على التصميم أو قاعدة البيانات أو منطق عمل التطبيق.; btn.textContent = '🔒 تسجيل عزل البليط';
     return;
   }
   if(dupCheck.active){
     btn.disabled = false; btn.textContent = '🔒 تسجيل عزل البليط';
-    showToast('⚠️ تم عزلها سابقًا بواسطة: : ' + dupCheck.isolatedBy);
+    showToast('⚠️ معزولة سابقا : ' + dupCheck.isolatedBy);
     return;
   }
 
@@ -1765,13 +1781,27 @@ $('exportBtn').addEventListener('click', ()=>{
   XLSX.utils.book_append_sheet(wb, ws, 'سجل العزل');
   XLSX.writeFile(wb, 'سجل_عزل_البليط_' + new Date().toISOString().slice(0,10) + '.xlsx');
 });
+$('exportActiveBtn').addEventListener('click', ()=>{
+  const active = records.filter(r=>r.status===STATUS_ISOLATED);
+  if(active.length===0){ showToast('لا توجد منتجات معزولة حاليًا للتصدير'); return; }
+  const headers = ['رقم البليط','الموديل','الكمية','نوع المنتج','عزل بواسطة','منصب العازل','وقت العزل','ملاحظات العزل'];
+  const rows = active.map(r=>[
+    r.palletNumber, r.model, r.quantity, r.productType,
+    r.isolatedBy, r.isolatedByPosition||'', fmtDateTime(r.isolatedAt), r.isolateNotes||''
+  ]);
+  const wsData = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = headers.map(()=>({ wch: 18 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'المعزولة حاليًا');
+  XLSX.writeFile(wb, 'المنتجات_المعزولة_' + new Date().toISOString().slice(0,10) + '.xlsx');
+});
 
 /* ---------- INIT ---------- */
 (async function init(){
   const loggedIn = await initAuth();
   if(loggedIn){ await bootMainApp(); }
   else{ renderLoginScreen(); }
-})();
 </script>
 
 </body>
