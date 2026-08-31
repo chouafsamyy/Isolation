@@ -2,10 +2,27 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>سجل عزل البليط - Condor CQ</title>
+
+<!-- PWA Meta Tags -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#141a3d">
+
+<!-- أيقونات iOS -->
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="76x76" href="icons/apple-touch-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="120x120" href="icons/apple-touch-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152x152.png">
+
+<!-- دعم الوضع المستقل على iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Suivi PF">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+
 <style>
   :root{
     --bg: #c9cede;
@@ -24,6 +41,8 @@
     --green-bg: #e4efe2;
     --blue: #3a6ea8;
     --blue-bg: #e2ebf3;
+    --purple: #7b4b9a;
+    --purple-bg: #efe6f5;
     --shadow: 0 2px 8px rgba(20,25,60,0.06);
   }
   *{box-sizing:border-box;}
@@ -60,7 +79,6 @@
     position:relative;
   }
 
-  /* Session bar */
   .session-bar{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     background:var(--panel-soft); border:1px solid var(--line); border-radius:10px;
@@ -76,8 +94,8 @@
 
   .tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--panel-soft);border:1px solid var(--line);padding:4px;border-radius:12px;flex-wrap:wrap;}
   .tab{
-    flex:1; min-width:70px; text-align:center; padding:10px 4px; border-radius:9px;
-    font-family:'Cairo',sans-serif; font-weight:800; font-size:12.5px; color:var(--ink-soft);
+    flex:1; min-width:60px; text-align:center; padding:10px 4px; border-radius:9px;
+    font-family:'Cairo',sans-serif; font-weight:800; font-size:11.5px; color:var(--ink-soft);
     cursor:pointer; border:none; background:transparent; transition:all .15s;
   }
   .tab.active{background:var(--panel);color:var(--ink);box-shadow:var(--shadow);}
@@ -106,8 +124,20 @@
   .hint.found{color:var(--green);}
   .hint.notfound{color:var(--ink-soft);}
   .hint.pending{color:var(--amber-dark);}
+  .hint.error{color:var(--red);}
 
-  /* Confirmation modal pallet echo */
+  .grade-selector{display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;}
+  .grade-btn{
+    flex:1; min-width:50px; padding:10px 0; border:2.5px solid var(--line); border-radius:10px;
+    background:#fff; font-family:'Cairo',sans-serif; font-weight:900; font-size:18px;
+    cursor:pointer; transition:all .12s; color:var(--ink-soft);
+  }
+  .grade-btn:hover{border-color:var(--amber);}
+  .grade-btn.active{background:var(--purple);color:#fff;border-color:var(--purple);}
+  .grade-btn.active-A{background:#4c7a56;color:#fff;border-color:#4c7a56;}
+  .grade-btn.active-B{background:#e2a233;color:#fff;border-color:#e2a233;}
+  .grade-btn.active-C{background:#b8433a;color:#fff;border-color:#b8433a;}
+
   .confirm-echo{
     background:#f3f1e9; border:1.5px dashed var(--line); border-radius:10px;
     padding:12px; text-align:center; margin:10px 0 4px;
@@ -115,14 +145,12 @@
   .confirm-echo .num{font-family:'Cairo',sans-serif;font-weight:900;font-size:20px;letter-spacing:1px;color:var(--ink);}
   .confirm-msg{font-size:13px;line-height:1.7;color:var(--ink-soft);margin-top:8px;}
 
-  /* Search / filter row on the active tab */
   .filter-panel{background:var(--panel-soft);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);margin-bottom:14px;}
   .filter-row{display:flex;gap:8px;margin-bottom:8px;}
   .filter-row:last-child{margin-bottom:0;}
   .filter-row select{flex:1;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Tajawal',sans-serif;font-size:13.5px;font-weight:600;color:var(--ink);background:#fff;}
   .clear-filter-btn{flex:0 0 auto;background:transparent;color:var(--ink-soft);border:1.5px solid var(--line);border-radius:9px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Tajawal',sans-serif;}
 
-  /* Scan row with camera button */
   .scan-row{display:flex;gap:8px;align-items:stretch;}
   .scan-row input{flex:1;min-width:0;}
   .cam-btn{
@@ -132,20 +160,13 @@
   }
   .cam-btn:active{background:var(--amber-dark);}
 
-  /* Camera scan modal */
-  #scanModal .modal{padding:16px;max-width:640px;}
-  .scan-video-wrap{
-    position:relative; width:100%; border-radius:12px; overflow:hidden;
-    background:#000; aspect-ratio:1/1; max-height:60vh;
-  }
-  #scanReader{width:100%;height:100%;}
-  #scanReader video{width:100%;height:100%;object-fit:cover;}
-  .scan-frame{
-    position:absolute; inset:12%; border:3px solid var(--amber); border-radius:14px;
-    pointer-events:none; box-shadow:0 0 0 2000px rgba(0,0,0,0.35);
-  }
-  .scan-status{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:10px;font-weight:600;}
-  .scan-status.err{color:var(--red);}
+  .modal-overlay{position:fixed;inset:0;background:rgba(35,38,43,0.55);display:none;align-items:flex-end;justify-content:center;z-index:200;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--panel);width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:20px 18px 26px;animation:slideUp .2s ease-out;max-height:88vh;overflow-y:auto;}
+  @keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal h3{font-family:'Cairo',sans-serif;font-size:16px;margin:0 0 4px;}
+  .modal .sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:16px;}
+  .modal-actions{display:flex;gap:8px;margin-top:16px;}
 
   .btn{
     display:inline-flex; align-items:center; justify-content:center; gap:6px; width:100%;
@@ -156,20 +177,27 @@
   .btn-isolate{background:var(--red);color:#fff;}
   .btn-release{background:var(--green);color:#fff;}
   .btn-primary{background:var(--blue);color:#fff;}
+  .btn-classify{background:var(--purple);color:#fff;}
   .btn-ghost{background:transparent;color:var(--ink-soft);border:1.5px solid var(--line);}
   .btn-sm{width:auto;padding:8px 14px;font-size:12.5px;}
   .btn:disabled{opacity:0.5;cursor:not-allowed;}
 
   .card{background:var(--panel-soft);border:1px solid var(--line);border-inline-start:6px solid var(--red);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
   .card.released{border-inline-start-color:var(--green);}
-  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .card.classified-A{border-inline-start-color:#4c7a56;}
+  .card.classified-B{border-inline-start-color:#e2a233;}
+  .card.classified-C{border-inline-start-color:#b8433a;}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
   .card-model{font-family:'Cairo',sans-serif;font-weight:800;font-size:15.5px;}
   .card-pallet{font-family:'Cairo',sans-serif;font-size:12px;font-weight:800;background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:6px;white-space:nowrap;}
-  .card.released .card-pallet{background:var(--green-bg);color:var(--green);}
+  .card.classified-A .card-pallet{background:var(--green-bg);color:var(--green);}
+  .card.classified-B .card-pallet{background:#f5edc8;color:#8a6d1a;}
+  .card.classified-C .card-pallet{background:var(--red-bg);color:var(--red);}
   .card-meta{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:12.5px;color:var(--ink-soft);}
   .card-meta b{color:var(--ink);font-weight:700;}
   .card-notes{margin-top:8px;font-size:12.5px;color:var(--ink-soft);background:#f3f1e9;padding:7px 9px;border-radius:7px;}
-  .card-footer{margin-top:12px;}
+  .card-footer{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;}
+  .card-footer .btn{width:auto;flex:1;min-width:80px;}
 
   .empty{text-align:center;padding:40px 20px;color:var(--ink-soft);}
   .empty .icon{font-size:34px;margin-bottom:8px;}
@@ -183,14 +211,6 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-  .modal-overlay{position:fixed;inset:0;background:rgba(35,38,43,0.55);display:none;align-items:flex-end;justify-content:center;z-index:200;}
-  .modal-overlay.show{display:flex;}
-  .modal{background:var(--panel);width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:20px 18px 26px;animation:slideUp .2s ease-out;max-height:88vh;overflow-y:auto;}
-  @keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-  .modal h3{font-family:'Cairo',sans-serif;font-size:16px;margin:0 0 4px;}
-  .modal .sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:16px;}
-  .modal-actions{display:flex;gap:8px;margin-top:16px;}
-
   .banner{display:flex;gap:8px;align-items:flex-start;background:#efe6cf;border:1px solid #d9c48f;color:#6b5316;padding:10px 12px;border-radius:10px;font-size:12px;margin-bottom:14px;line-height:1.6;}
   .loading{text-align:center;padding:30px;color:var(--ink-soft);font-size:13px;}
   .spin{width:20px;height:20px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--amber-dark);animation:sp 0.8s linear infinite;margin:0 auto 10px;}
@@ -199,19 +219,6 @@
   .footer-links{text-align:center;margin-top:6px;}
   .footer-links button{background:none;border:none;color:var(--ink-soft);font-size:12px;text-decoration:underline;cursor:pointer;font-family:'Tajawal',sans-serif;}
 
-  /* Login screen */
-  .login-wrap{
-    max-width:400px;margin:-20px auto 0;padding:20px 16px 16px;
-    background:var(--panel); border-radius:22px 22px 0 0;
-    box-shadow:0 -6px 20px rgba(20,25,60,0.08);
-    position:relative;
-  }
-  .login-card{background:var(--panel-soft);border:1px solid var(--line);border-radius:16px;padding:24px 20px;box-shadow:var(--shadow);}
-  .login-card h2{font-family:'Cairo',sans-serif;font-size:18px;margin:0 0 4px;}
-  .login-card .sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:18px;}
-  .pin-input{letter-spacing:8px;font-size:20px !important;text-align:center;font-weight:800 !important;}
-
-  /* Supervisor rows */
   .list-row{
     display:flex; align-items:center; gap:8px; padding:10px 8px; border:1px solid var(--line);
     border-radius:10px; margin-bottom:8px; background:#fff; flex-wrap:wrap;
@@ -226,6 +233,54 @@
   .icon-btn.danger{color:var(--red);border-color:#e3c3bd;}
   .icon-btn.ok{color:var(--green);border-color:#c4d9c7;}
   .inactive-row{opacity:0.5;}
+
+  .install-banner{
+    background:linear-gradient(135deg, var(--navy), #1a2555);color:#f4f1e8;
+    border-radius:14px;padding:16px 18px;margin-bottom:16px;
+    display:none;align-items:center;gap:12px;flex-wrap:wrap;
+    box-shadow:0 4px 20px rgba(20,25,60,0.3);
+  }
+  .install-banner .icon{font-size:32px;flex-shrink:0;}
+  .install-banner .msg{flex:1;min-width:140px;}
+  .install-banner .msg strong{display:block;font-size:15px;font-family:'Cairo',sans-serif;}
+  .install-banner .msg span{font-size:12.5px;color:#c9c6ba;}
+  .install-banner .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .install-banner .actions .btn{width:auto;padding:10px 18px;font-size:13px;}
+  .install-banner .actions .btn-primary{background:var(--amber);color:#23262b;}
+  .install-banner .actions .btn-ghost{border-color:#666c85;color:#c9c6ba;}
+
+  .step-indicator{display:flex;justify-content:center;gap:8px;margin:12px 0;}
+  .step-dot{width:10px;height:10px;border-radius:50%;background:var(--line);transition:background .2s;}
+  .step-dot.active{background:var(--purple);width:24px;border-radius:6px;}
+  .step-image{background:#f3f1e9;border-radius:10px;padding:12px;text-align:center;margin:10px 0;min-height:120px;display:flex;align-items:center;justify-content:center;flex-direction:column;border:1px dashed var(--line);}
+  .step-image .placeholder-icon{font-size:48px;opacity:0.5;}
+  .step-image img{max-width:100%;max-height:300px;border-radius:8px;border:1px solid var(--line);}
+  .step-text{font-size:13.5px;line-height:1.8;color:var(--ink);margin:8px 0;}
+  .step-text .highlight{background:var(--amber);color:#23262b;padding:2px 8px;border-radius:4px;font-weight:800;}
+  .nav-steps{display:flex;gap:8px;margin-top:12px;}
+  .nav-steps .btn{width:auto;flex:1;}
+
+  .scan-video-wrap{
+    position:relative; width:100%; border-radius:12px; overflow:hidden;
+    background:#000; aspect-ratio:1/1; max-height:60vh;
+  }
+  #scanReader{width:100%;height:100%;}
+  #scanReader video{width:100%;height:100%;object-fit:cover;}
+  .scan-frame{
+    position:absolute; inset:12%; border:3px solid var(--amber); border-radius:14px;
+    pointer-events:none; box-shadow:0 0 0 2000px rgba(0,0,0,0.35);
+  }
+  .scan-status{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:10px;font-weight:600;}
+  .scan-status.err{color:var(--red);}
+
+  @media(max-width:480px){
+    .tabs .tab{font-size:10px;padding:8px 2px;min-width:50px;}
+    .row2{flex-direction:column;gap:6px;}
+    .grade-btn{font-size:15px;padding:8px 0;}
+    .card-meta{grid-template-columns:1fr;}
+    .card-footer .btn{flex:1 1 100%;}
+    .install-banner .actions .btn{flex:1;min-width:80px;}
+  }
 </style>
 </head>
 <body>
@@ -236,11 +291,26 @@
   <p>مصلحة : مراقبة الجودة CQ</p>
 </header>
 
+<!-- INSTALL BANNER -->
+<div class="container" id="installBannerWrap" style="display:none;margin-top:-10px;padding:0 16px;">
+  <div class="install-banner" id="installBanner">
+    <div class="icon">📱</div>
+    <div class="msg">
+      <strong>ثبّت التطبيق على هاتفك</strong>
+      <span>ثبّت تطبيق متابعة الجودة للوصول إليه بسرعة واستخدامه كتطبيق مستقل.</span>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="installBtn">تثبيت التطبيق</button>
+      <button class="btn btn-ghost" id="installLaterBtn">لاحقًا</button>
+      <button class="btn btn-ghost" id="installHelpBtn">❓ مساعدة</button>
+    </div>
+  </div>
+</div>
+
 <!-- LOGIN SCREEN -->
 <div class="login-wrap" id="loginScreen" style="display:none">
   <div class="banner">يمكنكم الاستعانة بهاتف مفتش آخر في حال عدم توفركم على هاتف أو اتصال بالإنترنت.</div>
 
-  <!-- First-run setup -->
   <div class="login-card" id="setupCard" style="display:none">
     <h2>🛠 إعداد أولي — إنشاء أول حساب مشرف</h2>
     <div class="sub">لا يوجد بعد أي مستخدم مسجّل في هذا التطبيق. أنشئ حساب المشرف الأول لتتمكن بعدها من إضافة المفتشين.</div>
@@ -253,7 +323,6 @@
     <button class="btn btn-primary" id="btnSetup">إنشاء حساب المشرف والدخول</button>
   </div>
 
-  <!-- Normal login -->
   <div class="login-card" id="loginCard" style="display:none">
     <h2>👤 تسجيل الدخول</h2>
     <div class="sub">اختر اسمك وأدخل رمزك السري للمتابعة</div>
@@ -262,7 +331,6 @@
     <button class="btn btn-primary" id="btnLogin">دخول</button>
     <div class="hint" id="loginError" style="color:var(--red);margin-top:8px;"></div>
   </div>
-
 </div>
 
 <!-- MAIN APP -->
@@ -281,6 +349,7 @@
   <div class="tabs" id="tabsBar">
     <button class="tab active" data-tab="isolate">➕ عزل</button>
     <button class="tab" data-tab="active">🔴 المعزولة <span class="count" id="countActive">0</span></button>
+    <button class="tab" data-tab="classify">📊 تصنيف المنتج</button>
     <button class="tab" data-tab="history">📋 السجل</button>
     <button class="tab" data-tab="admin" id="adminTabBtn" style="display:none">⚙️ لوحة المشرف</button>
   </div>
@@ -342,6 +411,69 @@
     <div id="activeList"></div>
   </div>
 
+  <!-- CLASSIFY TAB -->
+  <div class="tab-content" id="tab-classify" style="display:none">
+    <div class="panel">
+      <h2><span class="swatch" style="background:var(--purple)"></span> تصنيف المنتج</h2>
+
+      <div class="field">
+        <label>الرقم التسلسلي / الباركود (Scan) *</label>
+        <div class="scan-row">
+          <input type="text" id="cf_pallet" placeholder="امسح الباركود أو اكتب الرقم" autocomplete="off">
+          <button type="button" class="cam-btn" id="openClassifyCamBtn" title="مسح بالكاميرا">📷</button>
+        </div>
+        <div class="hint" id="classifyScanHint"></div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>الموديل</label>
+          <input type="text" id="cf_model" placeholder="يُعبأ تلقائيًا" disabled style="text-transform:uppercase">
+        </div>
+        <div class="field">
+          <label>نوع المنتج</label>
+          <input type="text" id="cf_type" placeholder="يُعبأ تلقائيًا" disabled>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>التصنيف *</label>
+        <div class="grade-selector" id="gradeSelector">
+          <button type="button" class="grade-btn" data-grade="A">A</button>
+          <button type="button" class="grade-btn" data-grade="B">B</button>
+          <button type="button" class="grade-btn" data-grade="C">C</button>
+        </div>
+        <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">اختر تصنيف المنتج (A, B, أو C)</div>
+      </div>
+
+      <div class="field">
+        <label>سبب التصنيف (اختياري)</label>
+        <textarea id="cf_notes" placeholder="سبب التصنيف ..."></textarea>
+      </div>
+
+      <button class="btn btn-classify" id="btnClassify">💾 تسجيل التصنيف</button>
+    </div>
+
+    <div class="panel">
+      <h2>📋 سجل تصنيف المنتجات</h2>
+      <div class="filter-panel">
+        <div class="filter-row">
+          <div class="scan-row" style="flex:1">
+            <input type="text" id="classify_search" placeholder="ابحث برقم تسلسلي" autocomplete="off">
+            <button type="button" class="cam-btn" id="openClassifySearchCamBtn" title="بحث بالكاميرا">📷</button>
+          </div>
+        </div>
+        <div class="filter-row">
+          <select id="classify_modelFilter"><option value="">كل الموديلات</option></select>
+          <select id="classify_gradeFilter"><option value="">كل التصنيفات</option></select>
+          <button type="button" class="clear-filter-btn" id="clearClassifyFilters">مسح</button>
+        </div>
+      </div>
+      <div class="footer-links" id="exportClassifyWrap" style="display:none;margin-bottom:10px"><button id="exportClassifyBtn">⬇ تحميل سجل التصنيف Excel</button></div>
+      <div id="classifyList"></div>
+    </div>
+  </div>
+
   <!-- HISTORY TAB -->
   <div class="tab-content" id="tab-history" style="display:none">
     <div class="filter-panel">
@@ -360,16 +492,14 @@
     <div id="historyList"></div>
   </div>
 
-  <!-- ADMIN TAB (supervisor only) -->
+  <!-- ADMIN TAB -->
   <div class="tab-content" id="tab-admin" style="display:none">
-
     <div class="tabs" id="adminSubTabs">
       <button class="tab active" data-subtab="users">👤 المفتشون</button>
       <button class="tab" data-subtab="catalog">📦 الموديلات</button>
       <button class="tab" data-subtab="types">🏷 أنواع المنتج</button>
     </div>
 
-    <!-- 1) Users (inspectors/supervisors) management -->
     <div class="admin-subtab" id="sub-users">
       <div class="panel">
         <h3 id="userFormTitle">➕ إضافة مفتش / مشرف جديد</h3>
@@ -396,7 +526,6 @@
       <div id="usersList"></div>
     </div>
 
-    <!-- 2) Catalog (models) management -->
     <div class="admin-subtab" id="sub-catalog" style="display:none">
       <div class="panel">
         <h3 id="catalogFormTitle">➕ إضافة موديل جديد</h3>
@@ -423,7 +552,6 @@
       </div>
     </div>
 
-    <!-- 3) Product types management -->
     <div class="admin-subtab" id="sub-types" style="display:none">
       <div class="panel">
         <h3 id="typeFormTitle">➕ إضافة نوع منتج جديد</h3>
@@ -438,9 +566,7 @@
         <div id="typesList"></div>
       </div>
     </div>
-
   </div>
-
 </div>
 
 <!-- Release Modal -->
@@ -475,6 +601,21 @@
   </div>
 </div>
 
+<!-- Classification Duplicate Modal -->
+<div class="modal-overlay" id="classifyDuplicateModal">
+  <div class="modal">
+    <h3>⚠️ هذا المنتج مصنّف مسبقًا</h3>
+    <div class="confirm-echo">
+      <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;">الرقم التسلسلي:</div>
+      <div class="num" id="duplicatePalletNum"></div>
+    </div>
+    <div class="confirm-msg" id="duplicateMsg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="duplicateOkBtn" style="width:100%">حسنًا</button>
+    </div>
+  </div>
+</div>
+
 <!-- Camera Scan Modal -->
 <div class="modal-overlay" id="scanModal">
   <div class="modal">
@@ -492,22 +633,34 @@
   </div>
 </div>
 
+<!-- Install Instructions Modal -->
+<div class="modal-overlay" id="installHelpModal">
+  <div class="modal">
+    <h3>📱 كيفية تثبيت التطبيق</h3>
+    <div class="sub" id="installHelpSub">اتبع الخطوات التالية حسب جهازك ومتصفحك</div>
+    <div id="installSteps">
+      <div class="step-image" id="stepImage">
+        <div class="placeholder-icon">📸</div>
+      </div>
+      <div class="step-text" id="stepText">الخطوة 1</div>
+      <div class="step-indicator" id="stepDots"></div>
+      <div class="nav-steps">
+        <button class="btn btn-ghost" id="stepPrev">السابق</button>
+        <button class="btn btn-primary" id="stepNext">التالي</button>
+        <button class="btn btn-ghost" id="stepClose">إغلاق</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
-<!-- Firebase (Firestore) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-
-<!-- SheetJS: real .xlsx export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
-/* =====================================================================
-   FIREBASE CONFIG — استبدل القيم أدناه بالقيم التي نسختها من إعدادات
-   مشروعك في Firebase Console (راجع الدليل: الخطوة 3).
-   ===================================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyBf1hLb2BrDhrRxpnHKjqG_qhU-H0GlGpQ",
   authDomain: "isolation-dfd0f.firebaseapp.com",
@@ -526,21 +679,21 @@ let records = [];
 let authUsers = [];
 let catalog = [];
 let productTypes = [];
-let productTypeRows = []; // [{id, type}] — used for admin delete UI
+let productTypeRows = [];
 let currentUser = null;
 let currentTab = 'isolate';
 let releaseTargetId = null;
-
-// New-product confirmation / field-locking state (isolate tab)
-let matchedCatalogEntry = null;   // catalog row matching the current pallet, or null
-let newProductConfirmed = false;  // true once the user answered "نعم" for the current pallet
-let newProductConfirmedPallet = ''; // the exact pallet value that was confirmed
-
-// Active-tab search/filter state
+let classifications = [];
+let selectedGrade = null;
+let matchedCatalogEntryForClassify = null;
+let classifySearchQuery = '';
+let classifyModelFilter = '';
+let classifyGradeFilter = '';
+let matchedCatalogEntry = null;
+let newProductConfirmed = false;
+let newProductConfirmedPallet = '';
 let activeSearchQuery = '';
 let activeModelFilter = '';
-
-// History-tab search/filter state
 let historySearchQuery = '';
 let historyModelFilter = '';
 
@@ -588,22 +741,6 @@ async function withRetry(fn, label, maxAttempts){
   throw lastErr;
 }
 
-/* ---------- FIRESTORE DATABASE (generic API) ----------
-   نفس التوقيعات (list/append/update/delete/checkDuplicate) التي كانت تُنفَّذ
-   سابقًا عبر Google Apps Script، لكنها الآن تخاطب Firestore مباشرة من المتصفح.
-   كل "sheetKey" (records / users / catalog / productTypes) هو الآن اسم
-   مجموعة (collection) في Firestore.
-   قاعدة معرف المستند (document ID):
-     - records → معرف الوثيقة = حقل "معرف"
-     - users   → معرف الوثيقة = حقل "اسم_الدخول" (فريد أصلاً)
-     - catalog / productTypes → معرف تلقائي (لا حاجة لتعديل لاحقًا) */
-
-function docIdFor(sheetKey, row){
-  if(sheetKey === 'records') return String(row['معرف']);
-  if(sheetKey === 'users') return String(row['اسم_الدخول']);
-  return null; // auto-id
-}
-
 async function gasList(sheetKey){
   const snap = await db.collection(sheetKey).get();
   return snap.docs.map(d => Object.assign({ _id: d.id }, d.data()));
@@ -618,6 +755,14 @@ async function gasCheckDuplicate(pallet){
   const row = snap.docs[0].data();
   return { active: true, isolatedBy: row['عازل_الاسم_الكامل'] || '' };
 }
+async function gasCheckClassifyDuplicate(serial){
+  const snap = await db.collection('classifications')
+    .where('الرقم_التسلسلي', '==', serial)
+    .limit(1)
+    .get();
+  if(snap.empty) return null;
+  return snap.docs[0].data();
+}
 async function gasAppend(sheetKey, row){
   const id = docIdFor(sheetKey, row);
   if(id){ await db.collection(sheetKey).doc(id).set(row); }
@@ -625,8 +770,6 @@ async function gasAppend(sheetKey, row){
   return true;
 }
 async function gasUpdate(sheetKey, column, value, updates){
-  // في هذا التطبيق يكون "column" دائمًا هو نفس الحقل المستعمل كمعرف الوثيقة
-  // (معرف لسجلات records، اسم_الدخول لـ users) لذا نستطيع الوصول مباشرة.
   await db.collection(sheetKey).doc(String(value)).update(updates);
   return true;
 }
@@ -635,36 +778,42 @@ async function gasDelete(sheetKey, column, value){
   return true;
 }
 
+function docIdFor(sheetKey, row){
+  if(sheetKey === 'records') return String(row['معرف']);
+  if(sheetKey === 'users') return String(row['اسم_الدخول']);
+  if(sheetKey === 'classifications') return String(row['معرف']);
+  return null;
+}
+
 async function safeList(sheetKey, label){
   try{ return await withRetry(() => gasList(sheetKey), 'list:'+label); }
-  catch(e){ console.error(e); showToast('⚠️ تعذر الاتصال بقاعدة البيانات — تحقق من الإنترنت'); return []; }
+  catch(e){ console.error(e); showToast('⚠️ تعذر الاتصال بقاعدة البيانات'); return []; }
 }
 async function safeCheckDuplicate(pallet, label){
   try{ return await withRetry(() => gasCheckDuplicate(pallet), 'checkDuplicate:'+label); }
-  catch(e){ console.error(e); showToast('⚠️ تعذر الاتصال بقاعدة البيانات — تحقق من الإنترنت'); return null; }
+  catch(e){ console.error(e); showToast('⚠️ تعذر الاتصال بقاعدة البيانات'); return null; }
+}
+async function safeCheckClassifyDuplicate(serial, label){
+  try{ return await withRetry(() => gasCheckClassifyDuplicate(serial), 'checkClassifyDuplicate:'+label); }
+  catch(e){ console.error(e); showToast('⚠️ تعذر الاتصال بقاعدة البيانات'); return null; }
 }
 async function safeAppend(sheetKey, row, label){
   try{ await withRetry(() => gasAppend(sheetKey, row), 'append:'+label); return true; }
-  catch(e){ console.error(e); showToast('⚠️ فشل الحفظ — تحقق من الإنترنت وحاول مجددًا'); return false; }
+  catch(e){ console.error(e); showToast('⚠️ فشل الحفظ — تحقق من الإنترنت'); return false; }
 }
 async function safeUpdate(sheetKey, column, value, updates, label){
   try{ await withRetry(() => gasUpdate(sheetKey, column, value, updates), 'update:'+label); return true; }
-  catch(e){ console.error(e); showToast('⚠️ فشل التحديث — تحقق من الإنترنت وحاول مجددًا'); return false; }
+  catch(e){ console.error(e); showToast('⚠️ فشل التحديث — تحقق من الإنترنت'); return false; }
 }
 async function safeDelete(sheetKey, column, value, label){
   try{ await withRetry(() => gasDelete(sheetKey, column, value), 'delete:'+label); return true; }
-  catch(e){ console.error(e); showToast('⚠️ فشل الحذف — تحقق من الإنترنت وحاول مجددًا'); return false; }
+  catch(e){ console.error(e); showToast('⚠️ فشل الحذف — تحقق من الإنترنت'); return false; }
 }
 
-// Local device-only session persistence (not part of the shared DB)
 function loadPersonal(key){ try{ return localStorage.getItem(key); }catch(e){ return null; } }
 function savePersonal(key, value){ try{ localStorage.setItem(key, value); }catch(e){} }
 function deletePersonal(key){ try{ localStorage.removeItem(key); }catch(e){} }
 
-/* ---------- ROW <-> OBJECT MAPPING ---------- */
-// Old schema had a separate 'الصلاحية' column (inspector/supervisor) plus
-// 'المنصب' holding only 'OQC'/'PQC'. This maps old accounts to the new
-// unified position values automatically, without needing to edit the sheet.
 function normalizePosition(row){
   const NEW_VALUES = ['Inspecteur PQC', 'Inspecteur OQC', 'Superviseur'];
   const position = String(row['المنصب'] || '').trim();
@@ -758,11 +907,38 @@ function recordToRow(r){
   };
 }
 
-/* ---------- AUTH ---------- */
+function classifFromRow(row){
+  return {
+    id: String(row['معرف'] || ''),
+    serialNumber: row['الرقم_التسلسلي'] || '',
+    model: row['الموديل'] || '',
+    productType: row['نوع_المنتج'] || '',
+    grade: row['التصنيف'] || '',
+    notes: row['سبب_التصنيف'] || '',
+    classifiedAt: row['تاريخ_ووقت_التصنيف'] || '',
+    classifiedByUsername: row['مصنف_اسم_الدخول'] || '',
+    classifiedBy: row['مصنف_الاسم_الكامل'] || '',
+    classifiedByPosition: row['مصنف_المنصب'] || ''
+  };
+}
+function classifToRow(c){
+  return {
+    'معرف': c.id,
+    'الرقم_التسلسلي': c.serialNumber,
+    'الموديل': c.model,
+    'نوع_المنتج': c.productType,
+    'التصنيف': c.grade,
+    'سبب_التصنيف': c.notes,
+    'تاريخ_ووقت_التصنيف': c.classifiedAt,
+    'مصنف_اسم_الدخول': c.classifiedByUsername,
+    'مصنف_الاسم_الكامل': c.classifiedBy,
+    'مصنف_المنصب': c.classifiedByPosition || ''
+  };
+}
+
 async function initAuth(){
   const userRows = await safeList('users', 'users');
   authUsers = userRows.map(userFromRow);
-
   const sessionUsername = loadPersonal('condor_session_v1');
   if(sessionUsername){
     const u = authUsers.find(u => u.username === sessionUsername && u.active !== false);
@@ -813,7 +989,6 @@ $('btnLogin').addEventListener('click', async ()=>{
   const pin = $('li_pin').value.trim();
   const btn = $('btnLogin');
   btn.disabled = true; btn.textContent = 'جاري التحقق...';
-  // reload users fresh in case something changed
   const userRows = await safeList('users', 'login');
   authUsers = userRows.map(userFromRow);
   btn.disabled = false; btn.textContent = 'دخول';
@@ -837,7 +1012,6 @@ $('logoutBtn').addEventListener('click', ()=>{
   renderLoginScreen();
 });
 
-/* ---------- MAIN APP BOOT ---------- */
 async function bootMainApp(){
   $('loginScreen').style.display = 'none';
   $('mainApp').style.display = 'block';
@@ -848,17 +1022,20 @@ async function bootMainApp(){
   $('adminTabBtn').style.display = currentUser.position === 'Superviseur' ? 'block' : 'none';
   $('exportWrap').style.display = currentUser.position === 'Superviseur' ? 'block' : 'none';
   $('exportActiveWrap').style.display = currentUser.position === 'Superviseur' ? 'block' : 'none';
+  $('exportClassifyWrap').style.display = currentUser.position === 'Superviseur' ? 'block' : 'none';
 
   await refreshCatalog();
   await refreshRecords();
   await refreshProductTypes();
+  await refreshClassifications();
   render();
   restoreDraftPallet();
+  checkPWAInstall();
 }
 
 async function refreshRecords(){
   const rows = await safeList('records', 'records');
-  records = rows.map(recordFromRow).reverse(); // newest first
+  records = rows.map(recordFromRow).reverse();
 }
 async function refreshCatalog(){
   const rows = await safeList('catalog', 'catalog');
@@ -875,8 +1052,11 @@ async function refreshProductTypes(){
   productTypes = productTypeRows.map(r => r.type);
   refreshTypeList();
 }
+async function refreshClassifications(){
+  const rows = await safeList('classifications', 'classifications');
+  classifications = rows.map(classifFromRow).reverse();
+}
 
-/* ---------- TABS ---------- */
 document.querySelectorAll('#tabsBar .tab').forEach(t=>{
   t.addEventListener('click', async ()=>{
     document.querySelectorAll('#tabsBar .tab').forEach(x=>x.classList.remove('active'));
@@ -888,6 +1068,10 @@ document.querySelectorAll('#tabsBar .tab').forEach(t=>{
     if(currentTab === 'active' || currentTab === 'history'){
       await refreshRecords();
     }
+    if(currentTab === 'classify'){
+      await refreshClassifications();
+      await refreshCatalog();
+    }
     if(currentTab === 'admin'){
       await refreshUsers();
       await refreshCatalog();
@@ -898,10 +1082,8 @@ document.querySelectorAll('#tabsBar .tab').forEach(t=>{
   });
 });
 
-/* ---------- SERIAL SCAN AUTOFILL ---------- */
 function refreshTypeList(){
   const types = new Set(productTypes);
-  // Fallback: also include any type already used in the catalog, in case it hasn't been added to the list sheet yet.
   catalog.forEach(c => { if(c.productType) types.add(c.productType); });
   const options = [...types].map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
   const placeholder = '<option value="">اختر نوع المنتج...</option>';
@@ -911,15 +1093,13 @@ function refreshTypeList(){
     if(prev && types.has(prev)) sel.value = prev;
   });
 }
+
 function extractLead6Digits(serial){
-  // Skip a leading non-digit run (e.g. a leading 'P') then capture the first 6 consecutive digits.
   const s = String(serial||'').trim();
   const m = /^\D*(\d{6})/.exec(s);
   return m ? m[1] : null;
 }
 function last6Digits(str){
-  // Strip everything but digits, then take the last 6. Pads with leading zeros
-  // if Google Sheets auto-converted the cell to a Number and dropped leading zeros.
   const digitsOnly = String(str||'').replace(/\D/g, '');
   if(!digitsOnly) return '';
   return digitsOnly.length >= 6 ? digitsOnly.slice(-6) : digitsOnly.padStart(6, '0');
@@ -946,8 +1126,6 @@ function lookupSerial(serial){
   return lookupSerialByLead6(serial) || lookupSerialLegacy(serial);
 }
 
-/* Draft persistence: keep the entered pallet number across page reloads / tab
-   switches, especially when it isn't found in the catalog yet. */
 const DRAFT_PALLET_KEY = 'condor_draft_pallet_v1';
 function saveDraftPallet(value){
   if(value){ savePersonal(DRAFT_PALLET_KEY, value); }
@@ -974,9 +1152,7 @@ $('f_pallet').addEventListener('keydown', (e)=>{
     proceedAfterPalletEntry();
   }
 });
-// After a pallet number is entered/scanned, either the fields are already
-// filled+locked (existing product) or a confirmation dialog is required
-// (new product) before any data entry is allowed.
+
 function proceedAfterPalletEntry(){
   const serial = $('f_pallet').value.trim();
   if(!serial) return;
@@ -988,12 +1164,7 @@ function proceedAfterPalletEntry(){
     openConfirmNewProductModal(serial);
   }
 }
-function setProductFieldsLocked(locked){
-  $('f_model').disabled = locked;
-  $('f_type').disabled = locked;
-  // Quantity stays editable whenever a pallet is recognized or a new product was confirmed —
-  // it is only disabled while nothing has been confirmed yet.
-}
+
 function resetIsolateFormState(){
   matchedCatalogEntry = null;
   newProductConfirmed = false;
@@ -1003,6 +1174,7 @@ function resetIsolateFormState(){
   $('f_qty').value = ''; $('f_qty').disabled = true;
   $('f_lockNote').style.display = 'none';
 }
+
 function doScanLookup(){
   const serial = $('f_pallet').value.trim();
   const hint = $('scanHint');
@@ -1013,7 +1185,6 @@ function doScanLookup(){
   }
   const match = lookupSerial(serial);
   if(match){
-    // Existing product: model + type come from the database and cannot be edited.
     matchedCatalogEntry = match;
     if(newProductConfirmedPallet !== serial){ newProductConfirmed = false; newProductConfirmedPallet = ''; }
     $('f_model').value = match.model;
@@ -1029,7 +1200,6 @@ function doScanLookup(){
   }else{
     matchedCatalogEntry = null;
     if(newProductConfirmedPallet !== serial){
-      // Different / not-yet-confirmed pallet: lock fields until the user confirms via the dialog.
       newProductConfirmed = false;
       newProductConfirmedPallet = '';
       $('f_model').disabled = true; $('f_model').value = '';
@@ -1039,7 +1209,6 @@ function doScanLookup(){
       hint.textContent = 'ℹ️ لا يوجد تطابق في القائمة — اضغط Enter أو أكّد عبر رسالة التأكيد لإدخال منتج جديد';
       $('f_lockNote').style.display = 'none';
     }else{
-      // Already confirmed as a new product for this exact pallet value.
       $('f_model').disabled = false;
       $('f_type').disabled = false;
       $('f_qty').disabled = false;
@@ -1050,189 +1219,19 @@ function doScanLookup(){
   }
 }
 
-/* ===== Camera Barcode/QR Scanner ===== */
-let html5QrCode = null;
-let scannerRunning = false;
-let scanTargetField = 'isolate'; // 'isolate' | 'search' — which input the scanned code goes into
-
-function openScanModal(target){
-  scanTargetField = target || 'isolate';
-  $('scanModal').classList.add('show');
-  $('retryScanBtn').style.display = 'none';
-  $('scanStatus').className = 'scan-status';
-  $('scanStatus').textContent = 'جارٍ طلب إذن الكاميرا...';
-  startScanner();
-}
-function closeScanModal(){
-  $('scanModal').classList.remove('show');
-  stopScanner();
-}
-
-async function checkPermissionState(){
-  // Returns 'granted' | 'denied' | 'prompt' | 'unknown'
-  try{
-    if(navigator.permissions && navigator.permissions.query){
-      const status = await navigator.permissions.query({ name: 'camera' });
-      return status.state;
-    }
-  }catch(e){ /* some browsers don't support querying 'camera' */ }
-  return 'unknown';
-}
-
-function showScanError(message, opts){
-  $('scanStatus').className = 'scan-status err';
-  $('scanStatus').innerHTML = message;
-  $('retryScanBtn').style.display = (opts && opts.hideRetry) ? 'none' : 'block';
-}
-
-async function startScanner(){
-  $('retryScanBtn').style.display = 'none';
-
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    showScanError('⚠️ متصفحك لا يدعم الوصول إلى الكاميرا من المتصفح. جرّب متصفح Chrome محدّث.', {hideRetry:true});
-    return;
-  }
-  if(typeof Html5Qrcode === 'undefined'){
-    showScanError('⚠️ تعذر تحميل مكتبة المسح — تحقق من الاتصال بالإنترنت ثم أعد المحاولة.');
-    return;
-  }
-
-  // 1) Check existing permission state first (helps give an accurate message)
-  const permState = await checkPermissionState();
-  if(permState === 'denied'){
-    showScanError(
-      '🚫 إذن الكاميرا مرفوض لهذا الموقع تحديدًا (منفصل عن إذن الكاميرا العام للهاتف).<br>' +
-      'لتفعيله يدويًا: افتح ⋮ إعدادات المتصفح ← إعدادات الموقع (Site settings) ← الكاميرا ← اسمح (Allow) لهذا الرابط، ثم اضغط "إعادة المحاولة".',
-      {hideRetry:false}
-    );
-    return;
-  }
-
-  $('scanStatus').className = 'scan-status';
-  $('scanStatus').textContent = 'جارٍ طلب إذن الكاميرا... يرجى الضغط على "سماح" في نافذة المتصفح';
-
-  // 2) Explicitly request getUserMedia first — this reliably triggers the
-  //    native permission prompt (Html5Qrcode.start sometimes fails silently
-  //    if this isn't done first on some Android WebView / in-app browsers).
-  let stream;
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-  }catch(err){
-    handleCameraError(err);
-    return;
-  }
-  // Release this trial stream immediately — Html5Qrcode will open its own.
-  stream.getTracks().forEach(t => t.stop());
-
-  // 3) Now start the actual scanner
-  html5QrCode = new Html5Qrcode('scanReader');
-  const config = { fps: 12, qrbox: { width: 240, height: 240 }, aspectRatio: 1 };
-  html5QrCode.start(
-    { facingMode: 'environment' },
-    config,
-    (decodedText)=>{ onScanSuccess(decodedText); },
-    ()=>{ /* per-frame scan failure, ignore */ }
-  ).then(()=>{
-    scannerRunning = true;
-    $('scanStatus').className = 'scan-status';
-    $('scanStatus').textContent = 'وجّه الكاميرا نحو الباركود أو QR البليط';
-  }).catch((err)=>{
-    scannerRunning = false;
-    handleCameraError(err);
-  });
-}
-
-function handleCameraError(err){
-  console.error('Camera start error:', err);
-  const name = (err && err.name) || '';
-  if(name === 'NotAllowedError' || name === 'PermissionDeniedError'){
-    showScanError(
-      '🚫 تم رفض إذن الكاميرا لهذا الموقع.<br>' +
-      'فعّله يدويًا: افتح ⋮ (إعدادات المتصفح) ← إعدادات الموقع ← الكاميرا ← اسمح (Allow)، ثم اضغط "إعادة المحاولة".'
-    );
-  }else if(name === 'NotFoundError' || name === 'DevicesNotFoundError'){
-    showScanError('⚠️ لم يتم العثور على كاميرا على هذا الجهاز.', {hideRetry:true});
-  }else if(name === 'NotReadableError' || name === 'TrackStartError'){
-    showScanError('⚠️ الكاميرا مستخدمة حاليًا من تطبيق آخر. أغلق التطبيقات الأخرى التي تستخدم الكاميرا وأعد المحاولة.');
-  }else if(name === 'OverconstrainedError'){
-    showScanError('⚠️ تعذر تشغيل الكاميرا الخلفية. أعد المحاولة.');
-  }else{
-    showScanError('⚠️ تعذر الوصول إلى الكاميرا. تحقق من الأذونات وأعد المحاولة.<br><span style="font-size:10.5px">' + (name || 'خطأ غير معروف') + '</span>');
-  }
-}
-
-function stopScanner(){
-  if(html5QrCode && scannerRunning){
-    html5QrCode.stop().then(()=>{
-      html5QrCode.clear();
-      html5QrCode = null;
-      scannerRunning = false;
-    }).catch(()=>{
-      html5QrCode = null;
-      scannerRunning = false;
-    });
-  }
-}
-function onScanSuccess(decodedText){
-  if(!scannerRunning) return; // avoid double-fire while stopping
-  scannerRunning = false;
-  const value = decodedText.trim();
-  closeScanModal();
-
-  if(scanTargetField === 'search'){
-    $('active_search').value = value;
-    activeSearchQuery = value;
-    showToast('✅ تم مسح الرقم: ' + value);
-    render();
-    return;
-  }
-
-  if(scanTargetField === 'history-search'){
-    $('history_search').value = value;
-    historySearchQuery = value;
-    showToast('✅ تم مسح الرقم: ' + value);
-    render();
-    return;
-  }
-
-  // isolate tab: same cross-check as manual entry — the scanned number is what
-  // gets looked up, echoed back, and (if new) confirmed before any data entry.
-  $('f_pallet').value = value;
-  saveDraftPallet(value);
-  doScanLookup();
-  showToast('✅ تم مسح الرقم: ' + value);
-  proceedAfterPalletEntry();
-}
-$('openCamBtn').addEventListener('click', ()=>openScanModal('isolate'));
-$('openSearchCamBtn').addEventListener('click', ()=>openScanModal('search'));
-$('openHistoryCamBtn').addEventListener('click', ()=>openScanModal('history-search'));
-$('closeScanBtn').addEventListener('click', closeScanModal);
-$('retryScanBtn').addEventListener('click', startScanner);
-$('scanModal').addEventListener('click', (e)=>{ if(e.target.id === 'scanModal') closeScanModal(); });
-
-/* ---------- ISOLATE ---------- */
 $('btnIsolate').addEventListener('click', async ()=>{
   const pallet = $('f_pallet').value.trim();
   if(!pallet){ showToast('⚠️ يرجى إدخال رقم البليط'); return; }
-
-  // Guard against clicking before the debounced lookup has run (e.g. paste + immediate click).
   doScanLookup();
 
-  // Product exists in the DB: model/type are locked to the catalog's saved values
-  // regardless of what (if anything) is in the disabled fields.
   if(matchedCatalogEntry){
     doIsolateSave(pallet, matchedCatalogEntry.model, matchedCatalogEntry.productType, $('f_qty').value.trim());
     return;
   }
-
-  // New product not yet confirmed for this exact pallet number: block entry
-  // and force the confirmation dialog first.
   if(!newProductConfirmed || newProductConfirmedPallet !== pallet){
     openConfirmNewProductModal(pallet);
     return;
   }
-
-  // New, confirmed product: model/type/qty are the user's own entry.
   const model = $('f_model').value.trim().toUpperCase();
   const type = $('f_type').value.trim();
   const qty = $('f_qty').value.trim();
@@ -1245,12 +1244,8 @@ async function doIsolateSave(pallet, model, type, qty){
   const btn = $('btnIsolate');
   btn.disabled = true; btn.textContent = 'جاري التحقق...';
 
-  // Check for a duplicate before saving — same rule as before (pallet already
-  // isolated), but via a targeted server-side check instead of fetching the
-  // entire records sheet just to look for one pallet number.
   const dupCheck = await safeCheckDuplicate(pallet, 'isolate');
   if(dupCheck === null){
-    // Connection error already surfaced via toast inside safeCheckDuplicate.
     btn.disabled = false; btn.textContent = '🔒 تسجيل عزل البليط';
     return;
   }
@@ -1261,7 +1256,6 @@ async function doIsolateSave(pallet, model, type, qty){
   }
 
   btn.textContent = 'جاري الحفظ...';
-
   const rec = {
     id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
     palletNumber: pallet, model, quantity: qty, productType: type, isolateNotes: notes,
@@ -1272,10 +1266,6 @@ async function doIsolateSave(pallet, model, type, qty){
   };
   const ok = await safeAppend('records', recordToRow(rec), 'isolate');
 
-  // If this pallet's code wasn't recognized from the "الموديلات" catalog,
-  // save the first 6 digits there now (with what the user typed manually),
-  // so the same series is auto-recognized next time. Runs in the background
-  // (not awaited) so it doesn't delay the form being ready for the next pallet.
   if(ok){
     const existingMatch = lookupSerial(pallet);
     if(!existingMatch){
@@ -1291,15 +1281,8 @@ async function doIsolateSave(pallet, model, type, qty){
   }
 
   btn.disabled = false; btn.textContent = '🔒 تسجيل عزل البليط';
-
   if(ok){
-    // Update local state immediately instead of re-fetching the whole sheet
-    // (which is what made the next isolate feel slow) — the saved record is
-    // exactly what we just wrote, so this reflects the server state without
-    // an extra round trip. Tab switches / manual actions elsewhere still pull
-    // the authoritative copy from the sheet as before.
     records.unshift(rec);
-
     showToast('✅ تم عزل البليط ' + pallet);
     $('f_pallet').value=''; $('f_notes').value='';
     $('scanHint').textContent='';
@@ -1309,7 +1292,6 @@ async function doIsolateSave(pallet, model, type, qty){
   }
 }
 
-/* ---------- RELEASE ---------- */
 function openReleaseModal(id){
   const rec = records.find(r=>r.id===id);
   if(!rec) return;
@@ -1344,7 +1326,6 @@ $('confirmRelease').addEventListener('click', async ()=>{
   }
 });
 
-/* ---------- NEW PRODUCT CONFIRMATION ---------- */
 let confirmModalPallet = '';
 function openConfirmNewProductModal(pallet){
   confirmModalPallet = pallet;
@@ -1357,7 +1338,6 @@ function closeConfirmNewProductModal(){
 }
 $('confirmNewProductNo').addEventListener('click', ()=>{
   closeConfirmNewProductModal();
-  // Cancel the operation and return the user to a clean entry state.
   $('f_pallet').value = '';
   saveDraftPallet('');
   $('scanHint').textContent = '';
@@ -1367,7 +1347,6 @@ $('confirmNewProductNo').addEventListener('click', ()=>{
 $('confirmNewProductYes').addEventListener('click', ()=>{
   const pallet = confirmModalPallet;
   closeConfirmNewProductModal();
-  // Only now is the user allowed to enter model / quantity / product type.
   newProductConfirmed = true;
   newProductConfirmedPallet = pallet;
   matchedCatalogEntry = null;
@@ -1380,7 +1359,228 @@ $('confirmNewProductYes').addEventListener('click', ()=>{
   $('f_model').focus();
 });
 
-/* ---------- ADMIN SUB-TABS ---------- */
+function resetClassifyForm(){
+  selectedGrade = null;
+  matchedCatalogEntryForClassify = null;
+  $('cf_pallet').value = '';
+  $('cf_model').value = '';
+  $('cf_type').value = '';
+  $('cf_notes').value = '';
+  document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('active-A', 'active-B', 'active-C'));
+  $('classifyScanHint').textContent = '';
+  $('classifyScanHint').className = 'hint';
+}
+
+document.querySelectorAll('.grade-btn').forEach(btn => {
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.grade-btn').forEach(b => {
+      b.classList.remove('active', 'active-A', 'active-B', 'active-C');
+    });
+    const grade = btn.dataset.grade;
+    selectedGrade = grade;
+    btn.classList.add('active');
+    btn.classList.add('active-' + grade);
+  });
+});
+
+$('cf_pallet').addEventListener('input', ()=>{
+  clearTimeout(scanDebounce);
+  scanDebounce = setTimeout(doClassifyLookup, 200);
+});
+$('cf_pallet').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    doClassifyLookup();
+  }
+});
+
+function doClassifyLookup(){
+  const serial = $('cf_pallet').value.trim();
+  const hint = $('classifyScanHint');
+  if(!serial){
+    hint.textContent = '';
+    matchedCatalogEntryForClassify = null;
+    $('cf_model').value = '';
+    $('cf_type').value = '';
+    return;
+  }
+  const match = lookupSerial(serial);
+  if(match){
+    matchedCatalogEntryForClassify = match;
+    $('cf_model').value = match.model;
+    $('cf_type').value = match.productType;
+    hint.className = 'hint found';
+    hint.textContent = '✅ منتج موجود — الموديل والنوع مُعبآن تلقائيًا';
+  }else{
+    matchedCatalogEntryForClassify = null;
+    $('cf_model').value = '';
+    $('cf_type').value = '';
+    hint.className = 'hint error';
+    hint.textContent = '❌ الرقم التسلسلي غير موجود في قاعدة البيانات. لا يمكن تسجيل التصنيف.';
+  }
+}
+
+$('openClassifyCamBtn').addEventListener('click', ()=>openScanModal('classify'));
+$('openClassifySearchCamBtn').addEventListener('click', ()=>openScanModal('classify-search'));
+
+$('btnClassify').addEventListener('click', async ()=>{
+  const serial = $('cf_pallet').value.trim();
+  if(!serial){ showToast('⚠️ يرجى إدخال الرقم التسلسلي'); return; }
+  
+  const match = lookupSerial(serial);
+  if(!match){
+    showToast('❌ الرقم التسلسلي غير موجود في قاعدة البيانات');
+    return;
+  }
+  
+  if(!selectedGrade){ showToast('⚠️ يرجى اختيار التصنيف (A, B, أو C)'); return; }
+
+  const existing = await safeCheckClassifyDuplicate(serial, 'classify');
+  if(existing){
+    $('duplicatePalletNum').textContent = serial;
+    $('duplicateMsg').innerHTML = `
+      <div style="text-align:right;">
+        <div><strong>التصنيف المسجل:</strong> ${escapeHtml(existing['التصنيف'] || '—')}</div>
+        <div><strong>الموديل:</strong> ${escapeHtml(existing['الموديل'] || '—')}</div>
+        <div><strong>نوع المنتج:</strong> ${escapeHtml(existing['نوع_المنتج'] || '—')}</div>
+        <div><strong>صنّفه:</strong> ${escapeHtml(existing['مصنف_الاسم_الكامل'] || '—')}</div>
+        <div><strong>التاريخ:</strong> ${fmtDateTime(existing['تاريخ_ووقت_التصنيف'])}</div>
+        <div style="margin-top:6px;font-size:12px;color:var(--ink-soft);">لا يمكن تسجيل تصنيف جديد لنفس الرقم التسلسلي.</div>
+      </div>
+    `;
+    $('classifyDuplicateModal').classList.add('show');
+    return;
+  }
+
+  const btn = $('btnClassify');
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+
+  const classifRec = {
+    id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+    serialNumber: serial,
+    model: match.model,
+    productType: match.productType,
+    grade: selectedGrade,
+    notes: $('cf_notes').value.trim(),
+    classifiedAt: new Date().toISOString(),
+    classifiedBy: currentUser.fullName,
+    classifiedByUsername: currentUser.username,
+    classifiedByPosition: currentUser.position || ''
+  };
+  const ok = await safeAppend('classifications', classifToRow(classifRec), 'classify');
+  btn.disabled = false; btn.textContent = '💾 تسجيل التصنيف';
+
+  if(ok){
+    showToast('✅ تم تسجيل تصنيف ' + selectedGrade + ' للمنتج ' + serial);
+    await refreshClassifications();
+    resetClassifyForm();
+    render();
+  }
+});
+
+$('duplicateOkBtn').addEventListener('click', ()=>{
+  $('classifyDuplicateModal').classList.remove('show');
+});
+
+$('classify_search').addEventListener('input', ()=>{
+  clearTimeout(scanDebounce);
+  scanDebounce = setTimeout(()=>{
+    classifySearchQuery = $('classify_search').value.trim();
+    render();
+  }, 200);
+});
+$('classify_modelFilter').addEventListener('change', ()=>{
+  classifyModelFilter = $('classify_modelFilter').value;
+  render();
+});
+$('classify_gradeFilter').addEventListener('change', ()=>{
+  classifyGradeFilter = $('classify_gradeFilter').value;
+  render();
+});
+$('clearClassifyFilters').addEventListener('click', ()=>{
+  classifySearchQuery = ''; classifyModelFilter = ''; classifyGradeFilter = '';
+  $('classify_search').value = ''; $('classify_modelFilter').value = ''; $('classify_gradeFilter').value = '';
+  render();
+});
+
+async function deleteClassification(id){
+  if(!confirm('حذف سجل التصنيف هذا نهائيًا؟')) return;
+  const ok = await safeDelete('classifications', 'معرف', id, 'deleteClassification');
+  if(ok){ showToast('✅ تم حذف سجل التصنيف'); await refreshClassifications(); render(); }
+}
+
+$('exportClassifyBtn').addEventListener('click', ()=>{
+  if(classifications.length===0){ showToast('لا توجد بيانات تصنيف للتصدير'); return; }
+  const headers = ['الرقم التسلسلي','الموديل','نوع المنتج','التصنيف','سبب التصنيف','صنّف بواسطة','منصب المصنف','تاريخ ووقت التصنيف'];
+  const rows = classifications.map(c=>[
+    c.serialNumber, c.model, c.productType, c.grade, c.notes||'',
+    c.classifiedBy, c.classifiedByPosition||'', fmtDateTime(c.classifiedAt)
+  ]);
+  const wsData = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = headers.map(()=>({ wch: 18 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'سجل التصنيف');
+  XLSX.writeFile(wb, 'سجل_تصنيف_المنتجات_' + new Date().toISOString().slice(0,10) + '.xlsx');
+});
+
+function populateActiveModelFilter(activeRecords){
+  const sel = $('active_modelFilter');
+  const models = [...new Set(activeRecords.map(r=>r.model).filter(Boolean))].sort();
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">كل الموديلات</option>' + models.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+  if(prev && models.includes(prev)) sel.value = prev;
+}
+let activeSearchDebounce;
+$('active_search').addEventListener('input', ()=>{
+  clearTimeout(activeSearchDebounce);
+  activeSearchDebounce = setTimeout(()=>{
+    activeSearchQuery = $('active_search').value.trim();
+    render();
+  }, 200);
+});
+$('active_search').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); activeSearchQuery = $('active_search').value.trim(); render(); }
+});
+$('active_modelFilter').addEventListener('change', ()=>{
+  activeModelFilter = $('active_modelFilter').value;
+  render();
+});
+$('clearActiveFilters').addEventListener('click', ()=>{
+  activeSearchQuery = ''; activeModelFilter = '';
+  $('active_search').value = ''; $('active_modelFilter').value = '';
+  render();
+});
+
+function populateHistoryModelFilter(allRecords){
+  const sel = $('history_modelFilter');
+  const models = [...new Set(allRecords.map(r=>r.model).filter(Boolean))].sort();
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">كل الموديلات</option>' + models.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+  if(prev && models.includes(prev)) sel.value = prev;
+}
+let historySearchDebounce;
+$('history_search').addEventListener('input', ()=>{
+  clearTimeout(historySearchDebounce);
+  historySearchDebounce = setTimeout(()=>{
+    historySearchQuery = $('history_search').value.trim();
+    render();
+  }, 200);
+});
+$('history_search').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); historySearchQuery = $('history_search').value.trim(); render(); }
+});
+$('history_modelFilter').addEventListener('change', ()=>{
+  historyModelFilter = $('history_modelFilter').value;
+  render();
+});
+$('clearHistoryFilters').addEventListener('click', ()=>{
+  historySearchQuery = ''; historyModelFilter = '';
+  $('history_search').value = ''; $('history_modelFilter').value = '';
+  render();
+});
+
 document.querySelectorAll('#adminSubTabs .tab').forEach(t=>{
   t.addEventListener('click', ()=>{
     document.querySelectorAll('#adminSubTabs .tab').forEach(x=>x.classList.remove('active'));
@@ -1390,9 +1590,7 @@ document.querySelectorAll('#adminSubTabs .tab').forEach(t=>{
   });
 });
 
-/* ---------- ADMIN: USERS (add / edit / activate-deactivate / delete) ---------- */
 let editingUserUsername = null;
-
 function resetUserForm(){
   editingUserUsername = null;
   $('au_fullname').value=''; $('au_username').value=''; $('au_username').disabled=false; $('au_pin').value='';
@@ -1414,7 +1612,6 @@ function startEditUser(username){
   $('btnAddUser').textContent = '💾 حفظ التعديلات';
   $('userEditNote').style.display = 'block';
   $('btnCancelUserEdit').style.display = 'block';
-  $('sub-users').scrollIntoView({behavior:'smooth', block:'start'});
 }
 $('btnCancelUserEdit').addEventListener('click', resetUserForm);
 
@@ -1425,7 +1622,6 @@ $('btnAddUser').addEventListener('click', async ()=>{
   const position = $('au_position').value;
 
   if(editingUserUsername){
-    // Edit mode: PIN optional (blank = keep unchanged); username locked (it's the record key).
     if(!fullName){ showToast('يرجى إدخال الاسم الكامل'); return; }
     if(pin && (pin.length!==6 || !/^\d{6}$/.test(pin))){ showToast('الرمز السري يجب أن يكون 6 أرقام أو يُترك فارغًا'); return; }
     const updates = { 'الاسم_الكامل': fullName, 'المنصب': position };
@@ -1464,10 +1660,8 @@ async function deleteUser(username){
   if(ok){ if(editingUserUsername===username) resetUserForm(); await refreshUsers(); render(); }
 }
 
-/* ---------- ADMIN: CATALOG (add / edit / delete + search) ---------- */
 let editingCatalogId = null;
 let catalogSearchQuery = '';
-
 function resetCatalogForm(){
   editingCatalogId = null;
   $('ac_serial').value=''; $('ac_model').value=''; $('ac_qty').value=''; $('ac_type').value='';
@@ -1486,7 +1680,6 @@ function startEditCatalog(id){
   $('catalogFormTitle').textContent = '✏️ تعديل موديل: ' + c.model;
   $('btnAddCatalog').textContent = '💾 حفظ تعديل الموديل';
   $('btnCancelCatalogEdit').style.display = 'block';
-  $('sub-catalog').scrollIntoView({behavior:'smooth', block:'start'});
 }
 $('btnCancelCatalogEdit').addEventListener('click', resetCatalogForm);
 
@@ -1519,9 +1712,7 @@ $('clearCatalogSearch').addEventListener('click', ()=>{
   catalogSearchQuery = ''; $('catalog_search').value = ''; render();
 });
 
-/* ---------- ADMIN: PRODUCT TYPES (add / edit / delete) ---------- */
 let editingTypeId = null;
-
 function resetTypeForm(){
   editingTypeId = null;
   $('at_type').value = '';
@@ -1537,7 +1728,6 @@ function startEditType(id){
   $('typeFormTitle').textContent = '✏️ تعديل نوع: ' + t.type;
   $('btnAddType').textContent = '💾 حفظ التعديل';
   $('btnCancelTypeEdit').style.display = 'block';
-  $('sub-types').scrollIntoView({behavior:'smooth', block:'start'});
 }
 $('btnCancelTypeEdit').addEventListener('click', resetTypeForm);
 
@@ -1560,87 +1750,190 @@ async function deleteProductType(id){
   if(ok){ showToast('✅ تم الحذف'); if(editingTypeId===id) resetTypeForm(); await refreshProductTypes(); render(); }
 }
 
-/* ---------- ADMIN: RECORDS (delete a wrong/test record from السجل) ---------- */
 async function deleteRecord(id){
   if(!confirm('حذف هذا السجل نهائيًا من السجل؟ لا يمكن التراجع عن هذا الإجراء.')) return;
   const ok = await safeDelete('records', 'معرف', id, 'deleteRecord');
   if(ok){ showToast('✅ تم حذف السجل'); await refreshRecords(); render(); }
 }
 
-/* ---------- ACTIVE TAB: SEARCH & MODEL FILTER ---------- */
-function populateActiveModelFilter(activeRecords){
-  const sel = $('active_modelFilter');
-  const models = [...new Set(activeRecords.map(r=>r.model).filter(Boolean))].sort();
-  const prev = sel.value;
-  sel.innerHTML = '<option value="">كل الموديلات</option>' + models.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-  if(prev && models.includes(prev)) sel.value = prev;
-}
-let activeSearchDebounce;
-$('active_search').addEventListener('input', ()=>{
-  clearTimeout(activeSearchDebounce);
-  activeSearchDebounce = setTimeout(()=>{
-    activeSearchQuery = $('active_search').value.trim();
-    render();
-  }, 200);
-});
-$('active_search').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter'){
-    e.preventDefault();
-    activeSearchQuery = $('active_search').value.trim();
-    render();
-  }
-});
-$('active_modelFilter').addEventListener('change', ()=>{
-  activeModelFilter = $('active_modelFilter').value;
-  render();
-});
-$('clearActiveFilters').addEventListener('click', ()=>{
-  activeSearchQuery = ''; activeModelFilter = '';
-  $('active_search').value = ''; $('active_modelFilter').value = '';
-  render();
-});
+let html5QrCode = null;
+let scannerRunning = false;
+let scanTargetField = 'isolate';
 
-/* ---------- HISTORY TAB: SEARCH & MODEL FILTER ---------- */
-function populateHistoryModelFilter(allRecords){
-  const sel = $('history_modelFilter');
-  const models = [...new Set(allRecords.map(r=>r.model).filter(Boolean))].sort();
-  const prev = sel.value;
-  sel.innerHTML = '<option value="">كل الموديلات</option>' + models.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
-  if(prev && models.includes(prev)) sel.value = prev;
+function openScanModal(target){
+  scanTargetField = target || 'isolate';
+  $('scanModal').classList.add('show');
+  $('retryScanBtn').style.display = 'none';
+  $('scanStatus').className = 'scan-status';
+  $('scanStatus').textContent = 'جارٍ طلب إذن الكاميرا...';
+  startScanner();
 }
-let historySearchDebounce;
-$('history_search').addEventListener('input', ()=>{
-  clearTimeout(historySearchDebounce);
-  historySearchDebounce = setTimeout(()=>{
-    historySearchQuery = $('history_search').value.trim();
-    render();
-  }, 200);
-});
-$('history_search').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter'){
-    e.preventDefault();
-    historySearchQuery = $('history_search').value.trim();
-    render();
-  }
-});
-$('history_modelFilter').addEventListener('change', ()=>{
-  historyModelFilter = $('history_modelFilter').value;
-  render();
-});
-$('clearHistoryFilters').addEventListener('click', ()=>{
-  historySearchQuery = ''; historyModelFilter = '';
-  $('history_search').value = ''; $('history_modelFilter').value = '';
-  render();
-});
+function closeScanModal(){
+  $('scanModal').classList.remove('show');
+  stopScanner();
+}
 
-/* ---------- RENDER ---------- */
+async function checkPermissionState(){
+  try{
+    if(navigator.permissions && navigator.permissions.query){
+      const status = await navigator.permissions.query({ name: 'camera' });
+      return status.state;
+    }
+  }catch(e){}
+  return 'unknown';
+}
+
+function showScanError(message, opts){
+  $('scanStatus').className = 'scan-status err';
+  $('scanStatus').innerHTML = message;
+  $('retryScanBtn').style.display = (opts && opts.hideRetry) ? 'none' : 'block';
+}
+
+async function startScanner(){
+  $('retryScanBtn').style.display = 'none';
+
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showScanError('⚠️ متصفحك لا يدعم الوصول إلى الكاميرا.', {hideRetry:true});
+    return;
+  }
+  if(typeof Html5Qrcode === 'undefined'){
+    showScanError('⚠️ تعذر تحميل مكتبة المسح — تحقق من الاتصال بالإنترنت.');
+    return;
+  }
+
+  const permState = await checkPermissionState();
+  if(permState === 'denied'){
+    showScanError(
+      '🚫 إذن الكاميرا مرفوض لهذا الموقع.<br>فعّله يدويًا: ⋮ إعدادات الموقع ← الكاميرا ← اسمح، ثم اضغط "إعادة المحاولة".',
+      {hideRetry:false}
+    );
+    return;
+  }
+
+  $('scanStatus').className = 'scan-status';
+  $('scanStatus').textContent = 'جارٍ طلب إذن الكاميرا...';
+
+  let stream;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+  }catch(err){
+    handleCameraError(err);
+    return;
+  }
+  stream.getTracks().forEach(t => t.stop());
+
+  html5QrCode = new Html5Qrcode('scanReader');
+  const config = { fps: 12, qrbox: { width: 240, height: 240 }, aspectRatio: 1 };
+  html5QrCode.start(
+    { facingMode: 'environment' },
+    config,
+    (decodedText)=>{ onScanSuccess(decodedText); },
+    ()=>{}
+  ).then(()=>{
+    scannerRunning = true;
+    $('scanStatus').className = 'scan-status';
+    $('scanStatus').textContent = 'وجّه الكاميرا نحو الباركود أو QR';
+  }).catch((err)=>{
+    scannerRunning = false;
+    handleCameraError(err);
+  });
+}
+
+function handleCameraError(err){
+  console.error('Camera error:', err);
+  const name = (err && err.name) || '';
+  if(name === 'NotAllowedError' || name === 'PermissionDeniedError'){
+    showScanError('🚫 تم رفض إذن الكاميرا. فعّله يدويًا في إعدادات الموقع.');
+  }else if(name === 'NotFoundError' || name === 'DevicesNotFoundError'){
+    showScanError('⚠️ لم يتم العثور على كاميرا على هذا الجهاز.', {hideRetry:true});
+  }else if(name === 'NotReadableError' || name === 'TrackStartError'){
+    showScanError('⚠️ الكاميرا مستخدمة حاليًا من تطبيق آخر.');
+  }else{
+    showScanError('⚠️ تعذر الوصول إلى الكاميرا. تحقق من الأذونات وأعد المحاولة.');
+  }
+}
+
+function stopScanner(){
+  if(html5QrCode && scannerRunning){
+    html5QrCode.stop().then(()=>{
+      html5QrCode.clear();
+      html5QrCode = null;
+      scannerRunning = false;
+    }).catch(()=>{
+      html5QrCode = null;
+      scannerRunning = false;
+    });
+  }
+}
+
+function onScanSuccess(decodedText){
+  if(!scannerRunning) return;
+  scannerRunning = false;
+  const value = decodedText.trim();
+  closeScanModal();
+
+  if(scanTargetField === 'search'){
+    $('active_search').value = value;
+    activeSearchQuery = value;
+    showToast('✅ تم مسح الرقم: ' + value);
+    render();
+    return;
+  }
+  if(scanTargetField === 'history-search'){
+    $('history_search').value = value;
+    historySearchQuery = value;
+    showToast('✅ تم مسح الرقم: ' + value);
+    render();
+    return;
+  }
+  if(scanTargetField === 'classify'){
+    $('cf_pallet').value = value;
+    doClassifyLookup();
+    showToast('✅ تم مسح الرقم: ' + value);
+    return;
+  }
+  if(scanTargetField === 'classify-search'){
+    $('classify_search').value = value;
+    classifySearchQuery = value;
+    showToast('✅ تم مسح الرقم: ' + value);
+    render();
+    return;
+  }
+
+  $('f_pallet').value = value;
+  saveDraftPallet(value);
+  doScanLookup();
+  showToast('✅ تم مسح الرقم: ' + value);
+  proceedAfterPalletEntry();
+}
+
+$('openCamBtn').addEventListener('click', ()=>openScanModal('isolate'));
+$('openSearchCamBtn').addEventListener('click', ()=>openScanModal('search'));
+$('openHistoryCamBtn').addEventListener('click', ()=>openScanModal('history-search'));
+$('closeScanBtn').addEventListener('click', closeScanModal);
+$('retryScanBtn').addEventListener('click', startScanner);
+$('scanModal').addEventListener('click', (e)=>{ if(e.target.id === 'scanModal') closeScanModal(); });
+
+function populateClassifyFilters(){
+  const modelSel = $('classify_modelFilter');
+  const models = [...new Set(classifications.map(c=>c.model).filter(Boolean))].sort();
+  const prevModel = modelSel.value;
+  modelSel.innerHTML = '<option value="">كل الموديلات</option>' + models.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+  if(prevModel && models.includes(prevModel)) modelSel.value = prevModel;
+
+  const gradeSel = $('classify_gradeFilter');
+  const grades = [...new Set(classifications.map(c=>c.grade).filter(Boolean))].sort();
+  const prevGrade = gradeSel.value;
+  gradeSel.innerHTML = '<option value="">كل التصنيفات</option>' + grades.map(g=>`<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+  if(prevGrade && grades.includes(prevGrade)) gradeSel.value = prevGrade;
+}
+
 function render(){
   const active = records.filter(r=>r.status===STATUS_ISOLATED);
   $('countActive').textContent = active.length;
 
   if(currentTab === 'active'){
     populateActiveModelFilter(active);
-
     let filtered = active;
     if(activeSearchQuery){
       const q = activeSearchQuery.trim().toLowerCase();
@@ -1649,12 +1942,11 @@ function render(){
     if(activeModelFilter){
       filtered = filtered.filter(r => r.model === activeModelFilter);
     }
-
     const el = $('activeList');
     if(active.length === 0){
       el.innerHTML = '<div class="empty"><div class="icon">✅</div><p>لا توجد بليط معزولة حاليًا</p></div>';
     }else if(filtered.length === 0){
-      el.innerHTML = '<div class="empty"><div class="icon">🔎</div><p>لا توجد نتائج مطابقة للبحث / الفلتر</p></div>';
+      el.innerHTML = '<div class="empty"><div class="icon">🔎</div><p>لا توجد نتائج مطابقة</p></div>';
     }else{
       el.innerHTML = filtered.map(r=>`
         <div class="card">
@@ -1671,9 +1963,48 @@ function render(){
     }
   }
 
+  if(currentTab === 'classify'){
+    populateClassifyFilters();
+
+    let filtered = classifications;
+    if(classifySearchQuery){
+      const q = classifySearchQuery.trim().toLowerCase();
+      filtered = filtered.filter(c => String(c.serialNumber).toLowerCase().includes(q));
+    }
+    if(classifyModelFilter){
+      filtered = filtered.filter(c => c.model === classifyModelFilter);
+    }
+    if(classifyGradeFilter){
+      filtered = filtered.filter(c => c.grade === classifyGradeFilter);
+    }
+
+    const el = $('classifyList');
+    if(classifications.length === 0){
+      el.innerHTML = '<div class="empty"><div class="icon">📊</div><p>لا توجد تصنيفات مسجلة بعد</p></div>';
+    }else if(filtered.length === 0){
+      el.innerHTML = '<div class="empty"><div class="icon">🔎</div><p>لا توجد نتائج مطابقة</p></div>';
+    }else{
+      el.innerHTML = filtered.map(c=>{
+        const gradeClass = 'classified-' + c.grade;
+        return `<div class="card ${gradeClass}">
+          <div class="card-top"><div class="card-model">${escapeHtml(c.model)}</div><div class="card-pallet">${escapeHtml(c.serialNumber)}</div></div>
+          <div class="card-meta">
+            <div>النوع: <b>${escapeHtml(c.productType)}</b></div>
+            <div>التصنيف: <b>${escapeHtml(c.grade)}</b></div>
+            <div>صنّفه: <b>${escapeHtml(c.classifiedBy)}${c.classifiedByPosition ? ' — ' + escapeHtml(c.classifiedByPosition) : ''}</b></div>
+            <div>🕒 وقت التصنيف: <b>${fmtDateTime(c.classifiedAt)}</b></div>
+          </div>
+          ${c.notes ? `<div class="card-notes">${escapeHtml(c.notes)}</div>` : ''}
+          <div class="card-footer">
+            ${currentUser && currentUser.position === 'Superviseur' ? `<button class="btn btn-ghost" style="color:var(--red);border-color:#e3c3bd" onclick="deleteClassification('${c.id}')">🗑 حذف</button>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
   if(currentTab === 'history'){
     populateHistoryModelFilter(records);
-
     let filteredHistory = records;
     if(historySearchQuery){
       const q = historySearchQuery.trim().toLowerCase();
@@ -1682,12 +2013,11 @@ function render(){
     if(historyModelFilter){
       filteredHistory = filteredHistory.filter(r => r.model === historyModelFilter);
     }
-
     const el = $('historyList');
     if(records.length === 0){
       el.innerHTML = '<div class="empty"><div class="icon">📋</div><p>السجل فارغ حاليًا</p></div>';
     }else if(filteredHistory.length === 0){
-      el.innerHTML = '<div class="empty"><div class="icon">🔎</div><p>لا توجد نتائج مطابقة للبحث / الفلتر</p></div>';
+      el.innerHTML = '<div class="empty"><div class="icon">🔎</div><p>لا توجد نتائج مطابقة</p></div>';
     }else{
       el.innerHTML = filteredHistory.map(r=>{
         const isReleased = r.status===STATUS_RELEASED;
@@ -1706,7 +2036,7 @@ function render(){
           </div>
           ${r.isolateNotes ? `<div class="card-notes">🔴 عزل: ${escapeHtml(r.isolateNotes)}</div>` : ''}
           ${isReleased && r.releaseNotes ? `<div class="card-notes">🟢 تحرير: ${escapeHtml(r.releaseNotes)}</div>` : ''}
-          ${currentUser && currentUser.position === 'Superviseur' ? `<div class="card-footer"><button class="btn btn-ghost" style="color:var(--red);border-color:#e3c3bd" onclick="deleteRecord('${r.id}')">🗑 حذف هذا السجل</button></div>` : ''}
+          ${currentUser && currentUser.position === 'Superviseur' ? `<div class="card-footer"><button class="btn btn-ghost" style="color:var(--red);border-color:#e3c3bd" onclick="deleteRecord('${r.id}')">🗑 حذف</button></div>` : ''}
         </div>`;
       }).join('');
     }
@@ -1729,9 +2059,8 @@ function render(){
     const q = catalogSearchQuery.trim().toLowerCase();
     const filteredCatalog = !q ? catalog : catalog.filter(c =>
       (c.model||'').toLowerCase().includes(q) || (c.serialPrefix||'').toLowerCase().includes(q));
-
     const cEl = $('catalogList');
-    cEl.innerHTML = filteredCatalog.length === 0 ? '<div class="empty"><p>' + (catalog.length===0 ? 'القائمة فارغة' : 'لا توجد نتائج مطابقة للبحث') + '</p></div>' :
+    cEl.innerHTML = filteredCatalog.length === 0 ? '<div class="empty"><p>' + (catalog.length===0 ? 'القائمة فارغة' : 'لا توجد نتائج') + '</p></div>' :
       filteredCatalog.map(c=>`
         <div class="list-row">
           <div class="grow">
@@ -1753,7 +2082,6 @@ function render(){
   }
 }
 
-/* ---------- EXCEL (.xlsx) EXPORT ---------- */
 $('exportBtn').addEventListener('click', ()=>{
   if(records.length===0){ showToast('لا توجد بيانات للتصدير'); return; }
   const headers = ['رقم البليط','الموديل','الكمية','نوع المنتج','الحالة','عزل بواسطة','منصب العازل','وقت العزل','ملاحظات العزل','حرر بواسطة','منصب المحرر','وقت التحرير','ملاحظات التحرير'];
@@ -1769,9 +2097,10 @@ $('exportBtn').addEventListener('click', ()=>{
   XLSX.utils.book_append_sheet(wb, ws, 'سجل العزل');
   XLSX.writeFile(wb, 'سجل_عزل_البليط_' + new Date().toISOString().slice(0,10) + '.xlsx');
 });
+
 $('exportActiveBtn').addEventListener('click', ()=>{
   const active = records.filter(r=>r.status===STATUS_ISOLATED);
-  if(active.length===0){ showToast('لا توجد منتجات معزولة حاليًا للتصدير'); return; }
+  if(active.length===0){ showToast('لا توجد منتجات معزولة للتصدير'); return; }
   const headers = ['رقم البليط','الموديل','الكمية','نوع المنتج','عزل بواسطة','منصب العازل','وقت العزل','ملاحظات العزل'];
   const rows = active.map(r=>[
     r.palletNumber, r.model, r.quantity, r.productType,
@@ -1785,13 +2114,185 @@ $('exportActiveBtn').addEventListener('click', ()=>{
   XLSX.writeFile(wb, 'المنتجات_المعزولة_' + new Date().toISOString().slice(0,10) + '.xlsx');
 });
 
-/* ---------- INIT ---------- */
+let deferredPrompt = null;
+let installBannerShown = false;
+let installBannerDismissed = false;
+
+function isStandalone(){
+  return (window.matchMedia('(display-mode: standalone)').matches) ||
+         (window.navigator.standalone === true);
+}
+
+function checkPWAInstall(){
+  if(isStandalone()) {
+    $('installBannerWrap').style.display = 'none';
+    return;
+  }
+
+  const dismissed = loadPersonal('install_banner_dismissed');
+  if(dismissed === 'true') {
+    $('installBannerWrap').style.display = 'none';
+    return;
+  }
+
+  if(deferredPrompt) {
+    $('installBannerWrap').style.display = 'block';
+    $('installBanner').style.display = 'flex';
+  } else {
+    setTimeout(() => {
+      const dismissed2 = loadPersonal('install_banner_dismissed');
+      if(!isStandalone() && dismissed2 !== 'true' && !deferredPrompt) {
+        $('installBannerWrap').style.display = 'block';
+        $('installBanner').style.display = 'flex';
+        if(!deferredPrompt) {
+          $('installBtn').textContent = '📲 تعليمات التثبيت';
+          $('installBtn').onclick = () => openInstallHelp();
+        }
+      }
+    }, 3000);
+  }
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $('installBtn').textContent = 'تثبيت التطبيق';
+  $('installBtn').onclick = () => installApp();
+  if(!isStandalone() && loadPersonal('install_banner_dismissed') !== 'true') {
+    $('installBannerWrap').style.display = 'block';
+    $('installBanner').style.display = 'flex';
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  $('installBannerWrap').style.display = 'none';
+  savePersonal('install_banner_dismissed', 'true');
+  showToast('✅ تم تثبيت التطبيق بنجاح!');
+});
+
+async function installApp() {
+  if(deferredPrompt) {
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    if(result.outcome === 'accepted') {
+      savePersonal('install_banner_dismissed', 'true');
+      $('installBannerWrap').style.display = 'none';
+      showToast('✅ تم تثبيت التطبيق!');
+    } else {
+      showToast('❌ تم إلغاء التثبيت');
+    }
+    deferredPrompt = null;
+  } else {
+    openInstallHelp();
+  }
+}
+
+$('installBtn').addEventListener('click', installApp);
+
+$('installLaterBtn').addEventListener('click', () => {
+  $('installBannerWrap').style.display = 'none';
+  savePersonal('install_banner_dismissed', 'true');
+});
+
+$('installHelpBtn').addEventListener('click', openInstallHelp);
+
+let installStep = 0;
+let installStepsData = [];
+
+function getInstallSteps() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isChrome = /Chrome/.test(navigator.userAgent);
+
+  if(isIOS) {
+    return [
+      { image: '📱', text: 'افتح الموقع في <span class="highlight">Safari</span> (متصفح Safari فقط).' },
+      { image: '📤', text: 'اضغط على زر <span class="highlight">المشاركة</span> (مربع بسهم لأعلى) في أسفل الشاشة.' },
+      { image: '➕', text: 'مرر لأسفل واختر <span class="highlight">Add to Home Screen</span> (إضافة إلى الشاشة الرئيسية).' },
+      { image: '✅', text: 'اضغط على <span class="highlight">Add</span> (إضافة) في الأعلى يمين.' },
+      { image: '🏠', text: 'سيظهر التطبيق على <span class="highlight">الشاشة الرئيسية</span> بهذا الشكل.' }
+    ];
+  } else if(isAndroid && isChrome) {
+    return [
+      { image: '🌐', text: 'افتح الموقع في <span class="highlight">Google Chrome</span>.' },
+      { image: '⋮', text: 'اضغط على قائمة <span class="highlight">⋮</span> (ثلاث نقاط) في أعلى يمين المتصفح.' },
+      { image: '📲', text: 'اختر <span class="highlight">تثبيت التطبيق</span> (Install app) من القائمة.' },
+      { image: '✅', text: 'اضغط على <span class="highlight">تثبيت</span> في النافذة المنبثقة.' },
+      { image: '🏠', text: 'سيظهر التطبيق على <span class="highlight">الشاشة الرئيسية</span> بهذا الشكل.' }
+    ];
+  } else {
+    return [
+      { image: '🌐', text: 'افتح الموقع في <span class="highlight">متصفحك</span> المفضل.' },
+      { image: '📲', text: 'ابحث عن خيار <span class="highlight">تثبيت التطبيق</span> أو <span class="highlight">Add to Home Screen</span> في قائمة المتصفح.' },
+      { image: '✅', text: 'اتبع التعليمات لإضافة التطبيق إلى شاشة هاتفك الرئيسية.' },
+      { image: '🏠', text: 'سيظهر التطبيق على <span class="highlight">الشاشة الرئيسية</span>.' }
+    ];
+  }
+}
+
+function openInstallHelp() {
+  installStepsData = getInstallSteps();
+  installStep = 0;
+  
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  let subText = 'اتبع الخطوات التالية حسب جهازك ومتصفحك';
+  if(isIOS) subText = '📱 تعليمات التثبيت على iPhone / iPad (Safari)';
+  else if(isAndroid) subText = '📱 تعليمات التثبيت على Android (Chrome)';
+  $('installHelpSub').textContent = subText;
+  
+  $('installHelpModal').classList.add('show');
+  renderInstallStep();
+}
+
+function renderInstallStep() {
+  const data = installStepsData[installStep];
+  if(!data) return;
+  
+  const imgEl = $('stepImage');
+  imgEl.innerHTML = `<div style="font-size:64px;">${data.image}</div>`;
+  
+  $('stepText').innerHTML = `<strong>الخطوة ${installStep + 1} من ${installStepsData.length}</strong><br>${data.text}`;
+  
+  const dotsEl = $('stepDots');
+  dotsEl.innerHTML = installStepsData.map((_, i) => 
+    `<div class="step-dot ${i === installStep ? 'active' : ''}"></div>`
+  ).join('');
+  
+  $('stepPrev').style.display = installStep > 0 ? 'block' : 'none';
+  $('stepNext').textContent = installStep < installStepsData.length - 1 ? 'التالي →' : '✔️ إنهاء';
+}
+
+$('stepNext').addEventListener('click', () => {
+  if(installStep < installStepsData.length - 1) {
+    installStep++;
+    renderInstallStep();
+  } else {
+    $('installHelpModal').classList.remove('show');
+  }
+});
+
+$('stepPrev').addEventListener('click', () => {
+  if(installStep > 0) {
+    installStep--;
+    renderInstallStep();
+  }
+});
+
+$('stepClose').addEventListener('click', () => {
+  $('installHelpModal').classList.remove('show');
+});
+
+$('installHelpModal').addEventListener('click', (e) => {
+  if(e.target.id === 'installHelpModal') $('installHelpModal').classList.remove('show');
+});
+
 (async function init(){
   const loggedIn = await initAuth();
   if(loggedIn){ await bootMainApp(); }
   else{ renderLoginScreen(); }
 })();
 </script>
-
 </body>
 </html>
