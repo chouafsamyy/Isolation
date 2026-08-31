@@ -1,0 +1,36 @@
+{
+  "name": "Suivi PF - متابعة الجودة",
+  "short_name": "Suivi PF",
+  "description": "تطبيق متابعة عزل وتصنيف المنتجات - Condor Electronics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#141a3d",
+  "theme_color": "#141a3d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
