@@ -1069,7 +1069,7 @@ async function bootMainApp(){
   render();
   restoreDraftPallet();
   maybeShowInstallBanner();
-});
+}
 
 async function refreshRecords(){
   const rows = await safeList('records', 'records');
