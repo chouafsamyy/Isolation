@@ -254,6 +254,11 @@
   .icon-btn.ok{color:var(--green);border-color:#c4d9c7;}
   .inactive-row{opacity:0.5;}
 
+  /* Edit-group modal rows */
+  #editGroupList .list-row{align-items:flex-start;}
+  #editGroupList .list-row .grow .field{margin-bottom:0;}
+  #editGroupList .list-row .grow .field + .field{margin-top:8px;}
+
   /* PWA install banner */
   .install-banner{
     position:fixed; left:12px; right:12px; bottom:12px; z-index:300;
@@ -606,6 +611,19 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="confirmDeleteCancel" style="width:auto;flex:1">إلغاء</button>
       <button class="btn btn-isolate" id="confirmDeleteYes" style="flex:2">🗑 تأكيد الحذف</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Classification Group Modal -->
+<div class="modal-overlay" id="editGroupModal">
+  <div class="modal">
+    <h3 id="editGroupTitle">✏️ تعديل مجموعة</h3>
+    <div class="sub" id="editGroupSub"></div>
+    <div id="editGroupList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="editGroupCancel" style="width:auto;flex:1">إلغاء</button>
+      <button class="btn btn-primary" id="editGroupConfirm" style="flex:2">✅ تأكيد</button>
     </div>
   </div>
 </div>
@@ -1441,6 +1459,94 @@ function deleteClassifyGroup(groupKey){
   });
 }
 
+/* ---- Edit Classification Group Modal (visible to inspectors & supervisors) ---- */
+let editGroupKey = null;
+let editGroupDeletedIds = new Set();
+
+function openEditGroupModal(groupKey){
+  const items = classifications.filter(c => classifyGroupKey(c) === groupKey);
+  if(items.length === 0) return;
+  editGroupKey = groupKey;
+  editGroupDeletedIds = new Set();
+  $('editGroupTitle').textContent = '✏️ تعديل مجموعة: ' + items[0].model;
+  $('editGroupSub').textContent = 'النوع: ' + items[0].productType + ' — التصنيف الحالي للمجموعة: ' + items[0].grade;
+  renderEditGroupList(items);
+  $('editGroupModal').classList.add('show');
+}
+function renderEditGroupList(items){
+  $('editGroupList').innerHTML = items.map(c => `
+    <div class="list-row" id="egrow-${c.id}">
+      <div class="grow">
+        <div class="name">🔢 ${escapeHtml(c.serialNumber)}</div>
+        <div class="field">
+          <label>التصنيف</label>
+          <select class="eg-grade" data-id="${c.id}">
+            <option value="A" ${c.grade==='A'?'selected':''}>A</option>
+            <option value="B" ${c.grade==='B'?'selected':''}>B</option>
+            <option value="C" ${c.grade==='C'?'selected':''}>C</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>السبب</label>
+          <textarea class="eg-reason" data-id="${c.id}" placeholder="سبب التصنيف...">${escapeHtml(c.reason||'')}</textarea>
+        </div>
+      </div>
+      <button type="button" class="icon-btn danger" onclick="markEditGroupItemDeleted('${c.id}')">🗑 حذف</button>
+    </div>`).join('');
+}
+function markEditGroupItemDeleted(id){
+  editGroupDeletedIds.add(id);
+  const row = document.getElementById('egrow-' + id);
+  if(row) row.remove();
+  if($('editGroupList').querySelectorAll('.list-row').length === 0){
+    $('editGroupList').innerHTML = '<div class="empty"><p>تم تحديد كل العناصر للحذف — اضغط "تأكيد" لتنفيذ الحذف، أو "إلغاء" للتراجع عن كل شيء.</p></div>';
+  }
+}
+function closeEditGroupModal(){
+  $('editGroupModal').classList.remove('show');
+  editGroupKey = null;
+  editGroupDeletedIds = new Set();
+}
+$('editGroupCancel').addEventListener('click', closeEditGroupModal);
+$('editGroupModal').addEventListener('click', (e)=>{ if(e.target.id === 'editGroupModal') closeEditGroupModal(); });
+
+$('editGroupConfirm').addEventListener('click', async ()=>{
+  if(!editGroupKey){ closeEditGroupModal(); return; }
+  const btn = $('editGroupConfirm');
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+
+  const gradeInputs = $('editGroupList').querySelectorAll('.eg-grade');
+  const reasonInputs = $('editGroupList').querySelectorAll('.eg-reason');
+  const gradeMap = {}; gradeInputs.forEach(el=>{ gradeMap[el.dataset.id] = el.value; });
+  const reasonMap = {}; reasonInputs.forEach(el=>{ reasonMap[el.dataset.id] = el.value.trim(); });
+
+  let allOk = true;
+
+  // Apply deletions first
+  for(const id of editGroupDeletedIds){
+    const ok = await safeDelete('classifications', 'معرف', id, 'editGroupDelete');
+    if(!ok) allOk = false;
+  }
+  // Apply edits for the remaining (non-deleted) items only
+  for(const id of Object.keys(gradeMap)){
+    if(editGroupDeletedIds.has(id)) continue;
+    const original = classifications.find(c=>c.id===id);
+    if(!original) continue;
+    const newGrade = gradeMap[id];
+    const newReason = reasonMap[id] || '';
+    if(newGrade !== original.grade || newReason !== (original.reason||'')){
+      const ok = await safeUpdate('classifications', 'معرف', id, {'التصنيف': newGrade, 'سبب_التصنيف': newReason}, 'editGroupUpdate');
+      if(!ok) allOk = false;
+    }
+  }
+
+  btn.disabled = false; btn.textContent = '✅ تأكيد';
+  closeEditGroupModal();
+  await refreshClassifications();
+  render();
+  if(allOk) showToast('✅ تم حفظ التعديلات');
+});
+
 function populateClassifyFilters(list){
   const modelSel = $('classify_modelFilter');
   const typeSel = $('classify_typeFilter');
@@ -2177,6 +2283,9 @@ function render(){
             <div>التصنيف: <span class="grade-badge">${escapeHtml(g.grade)}</span></div>
             <div>مجموع الكمية: <b>${g.count}</b></div>
             <div>الحالة: ${classifyStatusBadge(g.status)}</div>
+          </div>
+          <div class="card-footer-row">
+            <button class="btn btn-primary" onclick="openEditGroupModal('${g.key}')">✏️ تعديل</button>
           </div>
           ${currentUser && currentUser.position === 'Superviseur' ? `
           <div class="card-footer-row">
