@@ -190,7 +190,13 @@
   .card-meta b{color:var(--ink);font-weight:700;}
   .card-notes{margin-top:8px;font-size:12.5px;color:var(--ink-soft);background:#f3f1e9;padding:7px 9px;border-radius:7px;}
   .card-footer{margin-top:12px;}
+  .card-footer-row{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;}
+  .card-footer-row .btn{flex:1;min-width:100px;}
   .grade-badge{font-family:'Cairo',sans-serif;font-weight:900;font-size:14px;padding:2px 10px;border-radius:8px;background:var(--purple);color:#fff;display:inline-block;}
+  .status-badge{font-family:'Cairo',sans-serif;font-weight:800;font-size:11.5px;padding:3px 10px;border-radius:20px;display:inline-block;background:var(--blue-bg);color:var(--blue);}
+  .status-badge.done{background:var(--green-bg);color:var(--green);}
+  .status-badge.recherche{background:#f7e4e0;color:var(--red);}
+  .status-badge.mixed{background:#efe6cf;color:#6b5316;}
 
   .empty{text-align:center;padding:40px 20px;color:var(--ink-soft);}
   .empty .icon{font-size:34px;margin-bottom:8px;}
@@ -447,19 +453,11 @@
 
     <div class="filter-panel">
       <div class="filter-row">
-        <div class="scan-row" style="flex:1">
-          <input type="text" id="classify_search" placeholder="ابحث برقم تسلسلي في سجل التصنيف" autocomplete="off">
-          <button type="button" class="cam-btn" id="openClassifySearchCamBtn" title="بحث بالكاميرا">📷</button>
-        </div>
+        <select id="classify_modelFilter"><option value="">كل الموديلات</option></select>
+        <select id="classify_typeFilter"><option value="">كل الأنواع</option></select>
       </div>
       <div class="filter-row">
-        <select id="classify_gradeFilter">
-          <option value="">كل التصنيفات</option>
-          <option value="A">A</option>
-          <option value="B">B</option>
-          <option value="C">C</option>
-        </select>
-        <button type="button" class="clear-filter-btn" id="clearClassifyFilters">مسح الفلاتر</button>
+        <button type="button" class="clear-filter-btn" id="clearClassifyFilters" style="flex:1">مسح الفلاتر</button>
       </div>
     </div>
     <div class="footer-links" id="exportClassifyWrap" style="display:none;margin-bottom:10px"><button id="exportClassifyBtn">⬇️ تحميل سجل التصنيف</button></div>
@@ -600,6 +598,18 @@
   </div>
 </div>
 
+<!-- Generic Delete Confirmation Modal -->
+<div class="modal-overlay" id="confirmDeleteModal">
+  <div class="modal">
+    <h3 id="confirmDeleteTitle">⚠️ تأكيد الحذف</h3>
+    <div class="sub" id="confirmDeleteMsg">هل أنت متأكد من رغبتك في الحذف؟ لا يمكن التراجع عن هذا الإجراء.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="confirmDeleteCancel" style="width:auto;flex:1">إلغاء</button>
+      <button class="btn btn-isolate" id="confirmDeleteYes" style="flex:2">🗑 تأكيد الحذف</button>
+    </div>
+  </div>
+</div>
+
 <!-- Camera Scan Modal -->
 <div class="modal-overlay" id="scanModal">
   <div class="modal">
@@ -680,6 +690,10 @@ const db = firebase.firestore();
 const STATUS_ISOLATED = 'معزولة';
 const STATUS_RELEASED = 'محررة';
 
+const CLASSIFY_STATUS_DONE = 'تم التصنيف';
+const CLASSIFY_STATUS_RECHERCHE = 'Recherch compte';
+const CLASSIFY_STATUS_PENDING = 'قيد الانتظار';
+
 let records = [];
 let authUsers = [];
 let catalog = [];
@@ -705,8 +719,8 @@ let historyModelFilter = '';
 
 // Classify-tab state
 let matchedClassifyCatalogEntry = null; // catalog row matching current classify serial, or null
-let classifySearchQuery = '';
-let classifyGradeFilter = '';
+let classifyModelFilter = '';
+let classifyTypeFilter = '';
 
 const $ = (id) => document.getElementById(id);
 const toastEl = $('toast');
@@ -952,7 +966,8 @@ function classificationFromRow(row){
     classifiedAt: row['تاريخ_ووقت_التصنيف'] || '',
     classifiedByUsername: row['المستخدم_اسم_الدخول'] || '',
     classifiedBy: row['المستخدم_الاسم_الكامل'] || '',
-    classifiedByPosition: row['المستخدم_المنصب'] || ''
+    classifiedByPosition: row['المستخدم_المنصب'] || '',
+    groupStatus: row['حالة_التصنيف'] || ''
   };
 }
 function classificationToRow(c){
@@ -966,7 +981,8 @@ function classificationToRow(c){
     'تاريخ_ووقت_التصنيف': c.classifiedAt,
     'المستخدم_اسم_الدخول': c.classifiedByUsername,
     'المستخدم_الاسم_الكامل': c.classifiedBy,
-    'المستخدم_المنصب': c.classifiedByPosition || ''
+    'المستخدم_المنصب': c.classifiedByPosition || '',
+    'حالة_التصنيف': c.groupStatus || ''
   };
 }
 
@@ -1354,7 +1370,8 @@ $('btnClassify').addEventListener('click', async ()=>{
     classifiedAt: new Date().toISOString(),
     classifiedByUsername: currentUser.username,
     classifiedBy: currentUser.fullName,
-    classifiedByPosition: currentUser.position || ''
+    classifiedByPosition: currentUser.position || '',
+    groupStatus: CLASSIFY_STATUS_PENDING
   };
   const ok = await safeAppend('classifications', classificationToRow(rec), 'classify');
   btn.disabled = false; btn.textContent = '💾 تسجيل التصنيف';
@@ -1368,38 +1385,94 @@ $('btnClassify').addEventListener('click', async ()=>{
   }
 });
 
-async function deleteClassification(id){
-  if(!confirm('حذف سجل التصنيف هذا نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.')) return;
-  const ok = await safeDelete('classifications', 'معرف', id, 'deleteClassification');
-  if(ok){ showToast('✅ تم حذف سجل التصنيف'); await refreshClassifications(); render(); }
+/* ---- Classification grouping helpers ---- */
+function classifyGroupKey(c){
+  return (c.model||'') + '⁝' + (c.grade||'') + '⁝' + (c.productType||'');
+}
+function computeClassifyGroups(list){
+  const map = new Map();
+  list.forEach(c=>{
+    const key = classifyGroupKey(c);
+    if(!map.has(key)){
+      map.set(key, { key, model: c.model, grade: c.grade, productType: c.productType, items: [] });
+    }
+    map.get(key).items.push(c);
+  });
+  return [...map.values()].map(g=>{
+    const statuses = new Set(g.items.map(it => it.groupStatus || CLASSIFY_STATUS_PENDING));
+    const status = statuses.size === 1 ? [...statuses][0] : 'mixed';
+    return {
+      key: g.key,
+      model: g.model,
+      grade: g.grade,
+      productType: g.productType,
+      count: g.items.length,
+      status: status,
+      ids: g.items.map(it=>it.id)
+    };
+  });
+}
+async function setClassifyGroupStatus(groupKey, status){
+  const group = computeClassifyGroups(classifications).find(g=>g.key===groupKey);
+  if(!group) return;
+  const btnLabel = status === CLASSIFY_STATUS_DONE ? 'تسجيل الحالة...' : 'تسجيل الحالة...';
+  showToast('⏳ جاري تحديث حالة المجموعة...');
+  let allOk = true;
+  for(const id of group.ids){
+    const ok = await safeUpdate('classifications', 'معرف', id, {'حالة_التصنيف': status}, 'classifyGroupStatus');
+    if(!ok) allOk = false;
+  }
+  await refreshClassifications();
+  render();
+  if(allOk) showToast('✅ تم تحديث حالة المجموعة');
+}
+function deleteClassifyGroup(groupKey){
+  const group = computeClassifyGroups(classifications).find(g=>g.key===groupKey);
+  if(!group) return;
+  openConfirmDelete('هل أنت متأكد من حذف جميع سجلات هذه المجموعة (' + group.model + ' — ' + group.grade + ')؟ سيتم حذف ' + group.count + ' سجل. لا يمكن التراجع عن هذا الإجراء.', async ()=>{
+    let allOk = true;
+    for(const id of group.ids){
+      const ok = await safeDelete('classifications', 'معرف', id, 'deleteClassifyGroup');
+      if(!ok) allOk = false;
+    }
+    await refreshClassifications();
+    render();
+    if(allOk) showToast('✅ تم حذف المجموعة');
+  });
 }
 
-let classifySearchDebounce;
-$('classify_search').addEventListener('input', ()=>{
-  clearTimeout(classifySearchDebounce);
-  classifySearchDebounce = setTimeout(()=>{
-    classifySearchQuery = $('classify_search').value.trim();
-    render();
-  }, 200);
+function populateClassifyFilters(list){
+  const modelSel = $('classify_modelFilter');
+  const typeSel = $('classify_typeFilter');
+  const models = [...new Set(list.map(c=>c.model).filter(Boolean))].sort();
+  const types = [...new Set(list.map(c=>c.productType).filter(Boolean))].sort();
+  const prevModel = modelSel.value;
+  const prevType = typeSel.value;
+  modelSel.innerHTML = '<option value="">كل الموديلات</option>' + models.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+  typeSel.innerHTML = '<option value="">كل الأنواع</option>' + types.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+  if(prevModel && models.includes(prevModel)) modelSel.value = prevModel;
+  if(prevType && types.includes(prevType)) typeSel.value = prevType;
+}
+$('classify_modelFilter').addEventListener('change', ()=>{
+  classifyModelFilter = $('classify_modelFilter').value;
+  render();
 });
-$('classify_search').addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter'){ e.preventDefault(); classifySearchQuery = $('classify_search').value.trim(); render(); }
-});
-$('classify_gradeFilter').addEventListener('change', ()=>{
-  classifyGradeFilter = $('classify_gradeFilter').value;
+$('classify_typeFilter').addEventListener('change', ()=>{
+  classifyTypeFilter = $('classify_typeFilter').value;
   render();
 });
 $('clearClassifyFilters').addEventListener('click', ()=>{
-  classifySearchQuery = ''; classifyGradeFilter = '';
-  $('classify_search').value = ''; $('classify_gradeFilter').value = '';
+  classifyModelFilter = ''; classifyTypeFilter = '';
+  $('classify_modelFilter').value = ''; $('classify_typeFilter').value = '';
   render();
 });
 $('exportClassifyBtn').addEventListener('click', ()=>{
   if(classifications.length===0){ showToast('لا توجد بيانات تصنيف للتصدير'); return; }
-  const headers = ['الرقم التسلسلي','الموديل','نوع المنتج','التصنيف','سبب التصنيف','المستخدم','منصب المستخدم','تاريخ ووقت التصنيف'];
+  const headers = ['الرقم التسلسلي','الموديل','نوع المنتج','التصنيف','سبب التصنيف','المستخدم','منصب المستخدم','تاريخ ووقت التصنيف','حالة المجموعة'];
   const rows = classifications.map(c=>[
     c.serialNumber, c.model, c.productType, c.grade, c.reason||'',
-    c.classifiedBy, c.classifiedByPosition||'', fmtDateTime(c.classifiedAt)
+    c.classifiedBy, c.classifiedByPosition||'', fmtDateTime(c.classifiedAt),
+    c.groupStatus || CLASSIFY_STATUS_PENDING
   ]);
   const wsData = [headers, ...rows];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -1412,7 +1485,7 @@ $('exportClassifyBtn').addEventListener('click', ()=>{
 /* ===== Camera Barcode/QR Scanner ===== */
 let html5QrCode = null;
 let scannerRunning = false;
-let scanTargetField = 'isolate'; // 'isolate' | 'search' | 'history-search' | 'classify' | 'classify-search'
+let scanTargetField = 'isolate'; // 'isolate' | 'search' | 'history-search' | 'classify'
 
 function openScanModal(target){
   scanTargetField = target || 'isolate';
@@ -1554,14 +1627,6 @@ function onScanSuccess(decodedText){
     return;
   }
 
-  if(scanTargetField === 'classify-search'){
-    $('classify_search').value = value;
-    classifySearchQuery = value;
-    showToast('✅ تم مسح الرقم: ' + value);
-    render();
-    return;
-  }
-
   if(scanTargetField === 'classify'){
     $('c_serial').value = value;
     doClassifyScanLookup();
@@ -1581,7 +1646,6 @@ $('openCamBtn').addEventListener('click', ()=>openScanModal('isolate'));
 $('openSearchCamBtn').addEventListener('click', ()=>openScanModal('search'));
 $('openHistoryCamBtn').addEventListener('click', ()=>openScanModal('history-search'));
 $('openClassifyCamBtn').addEventListener('click', ()=>openScanModal('classify'));
-$('openClassifySearchCamBtn').addEventListener('click', ()=>openScanModal('classify-search'));
 $('closeScanBtn').addEventListener('click', closeScanModal);
 $('retryScanBtn').addEventListener('click', startScanner);
 $('scanModal').addEventListener('click', (e)=>{ if(e.target.id === 'scanModal') closeScanModal(); });
@@ -1756,6 +1820,28 @@ $('confirmNewProductYes').addEventListener('click', ()=>{
   $('f_model').focus();
 });
 
+/* ---------- GENERIC DELETE CONFIRMATION MODAL ---------- */
+let pendingDeleteAction = null;
+function openConfirmDelete(message, onConfirm){
+  $('confirmDeleteMsg').textContent = message;
+  pendingDeleteAction = onConfirm;
+  $('confirmDeleteModal').classList.add('show');
+}
+function closeConfirmDelete(){
+  $('confirmDeleteModal').classList.remove('show');
+  pendingDeleteAction = null;
+}
+$('confirmDeleteCancel').addEventListener('click', closeConfirmDelete);
+$('confirmDeleteModal').addEventListener('click', (e)=>{ if(e.target.id === 'confirmDeleteModal') closeConfirmDelete(); });
+$('confirmDeleteYes').addEventListener('click', async ()=>{
+  const action = pendingDeleteAction;
+  const btn = $('confirmDeleteYes');
+  btn.disabled = true; btn.textContent = 'جاري الحذف...';
+  closeConfirmDelete();
+  if(action){ await action(); }
+  btn.disabled = false; btn.textContent = '🗑 تأكيد الحذف';
+});
+
 /* ---------- ADMIN SUB-TABS ---------- */
 document.querySelectorAll('#adminSubTabs .tab').forEach(t=>{
   t.addEventListener('click', ()=>{
@@ -1835,9 +1921,13 @@ async function toggleUserActive(username){
   const ok = await safeUpdate('users', 'اسم_الدخول', username, {'نشط': newActive}, 'toggleUser');
   if(ok){ await refreshUsers(); render(); }
 }
-async function deleteUser(username){
-  const ok = await safeDelete('users', 'اسم_الدخول', username, 'deleteUser');
-  if(ok){ if(editingUserUsername===username) resetUserForm(); await refreshUsers(); render(); }
+function confirmDeleteUser(username){
+  const u = authUsers.find(x=>x.username===username);
+  const label = u ? u.fullName : username;
+  openConfirmDelete('هل أنت متأكد من حذف حساب "' + label + '" نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.', async ()=>{
+    const ok = await safeDelete('users', 'اسم_الدخول', username, 'deleteUser');
+    if(ok){ if(editingUserUsername===username) resetUserForm(); await refreshUsers(); render(); showToast('✅ تم حذف الحساب'); }
+  });
 }
 
 /* ---------- ADMIN: CATALOG (add / edit / delete + search) ---------- */
@@ -1882,10 +1972,13 @@ $('btnAddCatalog').addEventListener('click', async ()=>{
   const ok = await safeAppend('catalog', row, 'addCatalog');
   if(ok){ showToast('✅ تمت إضافة الموديل'); resetCatalogForm(); await refreshCatalog(); render(); }
 });
-async function deleteCatalogItem(id){
-  if(!confirm('حذف هذا الموديل نهائيًا من قاعدة البيانات؟')) return;
-  const ok = await safeDelete('catalog', '_id', id, 'deleteCatalog');
-  if(ok){ showToast('✅ تم الحذف'); if(editingCatalogId===id) resetCatalogForm(); await refreshCatalog(); render(); }
+function deleteCatalogItem(id){
+  const c = catalog.find(x=>x.id===id);
+  const label = c ? c.model : '';
+  openConfirmDelete('هل أنت متأكد من حذف الموديل "' + label + '" نهائيًا من قاعدة البيانات؟ لا يمكن التراجع عن هذا الإجراء.', async ()=>{
+    const ok = await safeDelete('catalog', '_id', id, 'deleteCatalog');
+    if(ok){ showToast('✅ تم الحذف'); if(editingCatalogId===id) resetCatalogForm(); await refreshCatalog(); render(); }
+  });
 }
 $('catalog_search').addEventListener('input', ()=>{
   catalogSearchQuery = $('catalog_search').value.trim();
@@ -1930,17 +2023,23 @@ $('btnAddType').addEventListener('click', async ()=>{
   const ok = await safeAppend('productTypes', productTypeToRow(type), 'addType');
   if(ok){ showToast('✅ تمت إضافة النوع'); resetTypeForm(); await refreshProductTypes(); render(); }
 });
-async function deleteProductType(id){
-  if(!confirm('حذف نوع المنتج هذا؟')) return;
-  const ok = await safeDelete('productTypes', '_id', id, 'deleteProductType');
-  if(ok){ showToast('✅ تم الحذف'); if(editingTypeId===id) resetTypeForm(); await refreshProductTypes(); render(); }
+function deleteProductType(id){
+  const t = productTypeRows.find(x=>x.id===id);
+  const label = t ? t.type : '';
+  openConfirmDelete('هل أنت متأكد من حذف نوع المنتج "' + label + '"؟', async ()=>{
+    const ok = await safeDelete('productTypes', '_id', id, 'deleteProductType');
+    if(ok){ showToast('✅ تم الحذف'); if(editingTypeId===id) resetTypeForm(); await refreshProductTypes(); render(); }
+  });
 }
 
 /* ---------- ADMIN: RECORDS (delete a wrong/test record from السجل) ---------- */
-async function deleteRecord(id){
-  if(!confirm('حذف هذا السجل نهائيًا من السجل؟ لا يمكن التراجع عن هذا الإجراء.')) return;
-  const ok = await safeDelete('records', 'معرف', id, 'deleteRecord');
-  if(ok){ showToast('✅ تم حذف السجل'); await refreshRecords(); render(); }
+function deleteRecord(id){
+  const r = records.find(x=>x.id===id);
+  const label = r ? r.palletNumber : '';
+  openConfirmDelete('هل أنت متأكد من حذف السجل الخاص بالبليط "' + label + '" نهائيًا من السجل؟ لا يمكن التراجع عن هذا الإجراء.', async ()=>{
+    const ok = await safeDelete('records', 'معرف', id, 'deleteRecord');
+    if(ok){ showToast('✅ تم حذف السجل'); await refreshRecords(); render(); }
+  });
 }
 
 /* ---------- ACTIVE TAB: SEARCH & MODEL FILTER ---------- */
@@ -2010,6 +2109,12 @@ $('clearHistoryFilters').addEventListener('click', ()=>{
 });
 
 /* ---------- RENDER ---------- */
+function classifyStatusBadge(status){
+  if(status === CLASSIFY_STATUS_DONE) return '<span class="status-badge done">✅ ' + escapeHtml(CLASSIFY_STATUS_DONE) + '</span>';
+  if(status === CLASSIFY_STATUS_RECHERCHE) return '<span class="status-badge recherche">🔎 ' + escapeHtml(CLASSIFY_STATUS_RECHERCHE) + '</span>';
+  if(status === 'mixed') return '<span class="status-badge mixed">⚠️ حالات متعددة</span>';
+  return '<span class="status-badge">⏳ ' + escapeHtml(CLASSIFY_STATUS_PENDING) + '</span>';
+}
 function render(){
   const active = records.filter(r=>r.status===STATUS_ISOLATED);
   $('countActive').textContent = active.length;
@@ -2048,31 +2153,37 @@ function render(){
   }
 
   if(currentTab === 'classify'){
-    let filteredC = classifications;
-    if(classifySearchQuery){
-      const q = classifySearchQuery.trim().toLowerCase();
-      filteredC = filteredC.filter(c => String(c.serialNumber).toLowerCase().includes(q));
+    populateClassifyFilters(classifications);
+
+    let groups = computeClassifyGroups(classifications);
+    if(classifyModelFilter){
+      groups = groups.filter(g => g.model === classifyModelFilter);
     }
-    if(classifyGradeFilter){
-      filteredC = filteredC.filter(c => c.grade === classifyGradeFilter);
+    if(classifyTypeFilter){
+      groups = groups.filter(g => g.productType === classifyTypeFilter);
     }
+
     const el = $('classifyList');
     if(classifications.length === 0){
       el.innerHTML = '<div class="empty"><div class="icon">📊</div><p>لا توجد منتجات مصنفة حاليًا</p></div>';
-    }else if(filteredC.length === 0){
-      el.innerHTML = '<div class="empty"><div class="icon">🔎</div><p>لا توجد نتائج مطابقة للبحث / الفلتر</p></div>';
+    }else if(groups.length === 0){
+      el.innerHTML = '<div class="empty"><div class="icon">🔎</div><p>لا توجد نتائج مطابقة للفلتر</p></div>';
     }else{
-      el.innerHTML = filteredC.map(c=>`
+      el.innerHTML = groups.map(g=>`
         <div class="card classified">
-          <div class="card-top"><div class="card-model">${escapeHtml(c.model)}</div><div class="card-pallet">${escapeHtml(c.serialNumber)}</div></div>
+          <div class="card-top"><div class="card-model">${escapeHtml(g.model)}</div><div class="card-pallet">${escapeHtml(g.grade)}</div></div>
           <div class="card-meta">
-            <div>النوع: <b>${escapeHtml(c.productType)}</b></div>
-            <div>التصنيف: <span class="grade-badge">${escapeHtml(c.grade)}</span></div>
-            <div>صنّفه: <b>${escapeHtml(c.classifiedBy)}${c.classifiedByPosition ? ' — ' + escapeHtml(c.classifiedByPosition) : ''}</b></div>
-            <div>🕒 وقت التصنيف: <b>${fmtDateTime(c.classifiedAt)}</b></div>
+            <div>النوع: <b>${escapeHtml(g.productType)}</b></div>
+            <div>التصنيف: <span class="grade-badge">${escapeHtml(g.grade)}</span></div>
+            <div>مجموع الكمية: <b>${g.count}</b></div>
+            <div>الحالة: ${classifyStatusBadge(g.status)}</div>
           </div>
-          ${c.reason ? `<div class="card-notes">${escapeHtml(c.reason)}</div>` : ''}
-          ${currentUser && currentUser.position === 'Superviseur' ? `<div class="card-footer"><button class="btn btn-ghost" style="color:var(--red);border-color:#e3c3bd" onclick="deleteClassification('${c.id}')">🗑 حذف سجل التصنيف</button></div>` : ''}
+          ${currentUser && currentUser.position === 'Superviseur' ? `
+          <div class="card-footer-row">
+            <button class="btn btn-release" onclick="setClassifyGroupStatus('${g.key}', '${CLASSIFY_STATUS_DONE}')">✅ تم التصنيف</button>
+            <button class="btn btn-primary" onclick="setClassifyGroupStatus('${g.key}', '${CLASSIFY_STATUS_RECHERCHE}')">🔎 Recherch compte</button>
+            <button class="btn btn-ghost" style="color:var(--red);border-color:#e3c3bd" onclick="deleteClassifyGroup('${g.key}')">🗑 حذف</button>
+          </div>` : ''}
         </div>`).join('');
     }
   }
@@ -2129,7 +2240,7 @@ function render(){
           </div>
           <button class="icon-btn" onclick="startEditUser('${u.username}')">تعديل</button>
           <button class="icon-btn ${u.active===false?'ok':''}" onclick="toggleUserActive('${u.username}')">${u.active===false?'تفعيل':'تعطيل'}</button>
-          ${u.username!==currentUser.username ? `<button class="icon-btn danger" onclick="if(confirm('حذف هذا الحساب نهائيًا؟'))deleteUser('${u.username}')">حذف</button>` : ''}
+          ${u.username!==currentUser.username ? `<button class="icon-btn danger" onclick="confirmDeleteUser('${u.username}')">حذف</button>` : ''}
         </div>`).join('');
 
     const q = catalogSearchQuery.trim().toLowerCase();
