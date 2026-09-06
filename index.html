@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Condor CQ - suivi PF</title>
 
-<!-- PWA -->
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#141a3d">
 <meta name="mobile-web-app-capable" content="yes">
@@ -123,6 +122,18 @@
   .hint.notfound{color:var(--ink-soft);}
   .hint.pending{color:var(--amber-dark);}
   .hint.err{color:var(--red);}
+
+  /* Cause-details subsection (isolate tab) */
+  .cause-section{
+    margin-top:20px; padding-top:16px; border-top:1.5px dashed var(--line);
+  }
+  .cause-section-title{
+    display:flex; align-items:center; gap:8px;
+    font-family:'Cairo',sans-serif; font-weight:800; font-size:13.5px; color:var(--ink);
+    margin-bottom:14px;
+  }
+  .cause-section-title .swatch{background:var(--amber-dark);}
+  .cause-section .field select{cursor:pointer;}
 
   /* Confirmation modal pallet echo */
   .confirm-echo{
@@ -258,44 +269,6 @@
   #editGroupList .list-row{align-items:flex-start;}
   #editGroupList .list-row .grow .field{margin-bottom:0;}
   #editGroupList .list-row .grow .field + .field{margin-top:8px;}
-
-  /* PWA install banner */
-  .install-banner{
-    position:fixed; left:12px; right:12px; bottom:12px; z-index:300;
-    background:var(--panel); border:1px solid var(--line); border-radius:16px;
-    box-shadow:0 10px 30px rgba(20,25,60,0.25); padding:14px 16px;
-    display:none; align-items:center; gap:12px; max-width:600px; margin:0 auto;
-  }
-  .install-banner.show{display:flex;}
-  .install-banner .ib-icon{width:44px;height:44px;border-radius:12px;flex:0 0 auto;background:linear-gradient(135deg,var(--navy),var(--navy-2));display:flex;align-items:center;justify-content:center;font-size:22px;}
-  .install-banner .ib-text{flex:1;min-width:0;}
-  .install-banner .ib-text b{font-family:'Cairo',sans-serif;font-size:13.5px;display:block;margin-bottom:2px;}
-  .install-banner .ib-text span{font-size:11.5px;color:var(--ink-soft);line-height:1.5;display:block;}
-  .install-banner .ib-actions{display:flex;flex-direction:column;gap:6px;flex:0 0 auto;}
-  .install-banner .ib-actions button{white-space:nowrap;padding:8px 12px;font-size:12px;border-radius:8px;font-family:'Cairo',sans-serif;font-weight:800;cursor:pointer;border:none;}
-  .ib-install{background:var(--amber);color:#23262b;}
-  .ib-later{background:transparent;color:var(--ink-soft);}
-
-  /* Install guide modal */
-  #installGuideModal .modal{padding:0;overflow:hidden;}
-  .guide-head{background:linear-gradient(135deg,var(--navy),var(--navy-2));color:#f4f1e8;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;}
-  .guide-head h3{margin:0;color:#f4f1e8;}
-  .guide-close{background:none;border:none;color:#f4f1e8;font-size:20px;cursor:pointer;}
-  .guide-body{padding:18px;}
-  .guide-step-num{
-    display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;
-    background:var(--amber);color:#23262b;font-family:'Cairo',sans-serif;font-weight:900;font-size:13px;margin-inline-end:8px;
-  }
-  .guide-step-title{font-family:'Cairo',sans-serif;font-weight:800;font-size:14.5px;display:inline;}
-  .guide-illustration{
-    background:var(--panel-soft);border:1px dashed var(--line);border-radius:12px;
-    padding:18px;margin:12px 0;display:flex;align-items:center;justify-content:center;min-height:150px;
-  }
-  .guide-desc{font-size:13px;color:var(--ink-soft);line-height:1.7;margin-top:6px;}
-  .guide-dots{display:flex;gap:6px;justify-content:center;margin-top:14px;}
-  .guide-dots span{width:7px;height:7px;border-radius:50%;background:var(--line);}
-  .guide-dots span.active{background:var(--amber-dark);}
-  .guide-nav{display:flex;gap:8px;margin-top:16px;}
 </style>
 </head>
 <body>
@@ -309,19 +282,6 @@
 <!-- LOGIN SCREEN -->
 <div class="login-wrap" id="loginScreen" style="display:none">
   <div class="banner">يمكنكم الاستعانة بهاتف مفتش آخر في حال عدم توفركم على هاتف أو اتصال بالإنترنت.</div>
-
-  <!-- First-run setup -->
-  <div class="login-card" id="setupCard" style="display:none">
-    <h2>🛠 إعداد أولي — إنشاء أول حساب مشرف</h2>
-    <div class="sub">لا يوجد بعد أي مستخدم مسجّل في هذا التطبيق. أنشئ حساب المشرف الأول لتتمكن بعدها من إضافة المفتشين.</div>
-    <div class="field"><label>الاسم الكامل</label><input type="text" id="su_fullname" placeholder="مثال: شواف سامي"></div>
-    <div class="field"><label>اسم الدخول</label><input type="text" id="su_username" placeholder="مثال: chouaf" autocapitalize="off"></div>
-    <div class="field"><label>الرمز السري</label><input type="password" id="su_pin" class="pin-input" maxlength="6" inputmode="numeric" placeholder="••••••"></div>
-    <div class="field"><label>المنصب</label>
-      <input type="text" value="Superviseur" disabled style="background:#f2f2f2;color:var(--ink-soft)">
-    </div>
-    <button class="btn btn-primary" id="btnSetup">إنشاء حساب المشرف والدخول</button>
-  </div>
 
   <!-- Normal login -->
   <div class="login-card" id="loginCard" style="display:none">
@@ -386,9 +346,55 @@
         <div class="locked-note" id="f_lockNote" style="display:none"></div>
       </div>
 
-      <div class="field">
-        <label>سبب العزل / ملاحظات</label>
-        <textarea id="f_notes" placeholder="عيب في التغليف، تشوهات في الهيكل ..."></textarea>
+      <div class="cause-section">
+        <div class="cause-section-title"><span class="swatch"></span> تفاصيل سبب العزل</div>
+
+        <div class="field">
+          <label>فئة السبب *</label>
+          <select id="f_causeCategory">
+            <option value="">اختر فئة السبب...</option>
+            <option value="المظهر والتجميع">المظهر والتجميع</option>
+            <option value="الوظيفة والأداء">الوظيفة والأداء</option>
+            <option value="السلامة الكهربائية">السلامة الكهربائية</option>
+            <option value="التسرب">التسرب</option>
+            <option value="الوثائق والمعلومات والمرفقات">الوثائق والمعلومات والمرفقات</option>
+            <option value="التغليف والتكديس">التغليف والتكديس</option>
+          </select>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>مصدر السبب *</label>
+            <select id="f_causeSource">
+              <option value="">اختر مصدر السبب...</option>
+              <option value="المورد">المورد</option>
+              <option value="المنتج">المنتج</option>
+              <option value="المخزن">المخزن</option>
+              <option value="غياب عنصر">غياب عنصر</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>الخط *</label>
+            <select id="f_line">
+              <option value="">اختر الخط...</option>
+              <option value="S1L1">S1L1</option>
+              <option value="S1L2">S1L2</option>
+              <option value="S1L3">S1L3</option>
+              <option value="S1L4">S1L4</option>
+              <option value="S2L1">S2L1</option>
+              <option value="S2L2">S2L2</option>
+              <option value="S2L3">S2L3</option>
+              <option value="S2L4">S2L4</option>
+              <option value="S2L5">S2L5</option>
+              <option value="المخزن">المخزن</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>سبب العزل / ملاحظات</label>
+          <textarea id="f_notes" placeholder="عيب في التغليف، تشوهات في الهيكل ..."></textarea>
+        </div>
       </div>
 
       <button class="btn btn-isolate" id="btnIsolate">🔒 تسجيل عزل البليط</button>
@@ -576,10 +582,18 @@
   <div class="modal">
     <h3>تحرير البليط</h3>
     <div class="sub" id="releaseModalSub"></div>
+    <div class="field">
+      <label>نوع التحرير *</label>
+      <select id="releaseType">
+        <option value="">اختر نوع التحرير...</option>
+        <option value="تمت إعادة الفحص">تمت إعادة الفحص</option>
+        <option value="تم التحرير بدون فحص">تم التحرير بدون فحص</option>
+      </select>
+    </div>
     <div class="field"><label>ملاحظات التحرير (اختياري)</label><textarea id="releaseNotes" placeholder="مثال: تم تصحيح العيب، مطابق للمواصفات..."></textarea></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="cancelRelease" style="width:auto;flex:1">إلغاء</button>
-      <button class="btn btn-release" id="confirmRelease" style="flex:2">✅ تأكيد التحرير</button>
+      <button class="btn btn-release" id="confirmRelease" style="flex:2">🔓 تحرير</button>
     </div>
   </div>
 </div>
@@ -599,6 +613,18 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="confirmNewProductNo" style="width:auto;flex:1">لا</button>
       <button class="btn btn-primary" id="confirmNewProductYes" style="flex:2">✅ نعم</button>
+    </div>
+  </div>
+</div>
+
+<!-- Post-Isolate: Keep Data For Next Pallet Modal -->
+<div class="modal-overlay" id="keepDataModal">
+  <div class="modal">
+    <h3>✅ تم تسجيل العزل بنجاح</h3>
+    <div class="sub">هل تريد الاحتفاظ بنفس المعلومات (الموديل، النوع، الكمية، تفاصيل السبب) لتسهيل عملية عزل البليطة التالية؟</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="keepDataNo" style="width:auto;flex:1">لا، إفراغ الحقول</button>
+      <button class="btn btn-primary" id="keepDataYes" style="flex:2">✅ نعم، احتفظ بالمعلومات</button>
     </div>
   </div>
 </div>
@@ -641,39 +667,6 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="closeScanBtn" style="width:100%">إلغاء</button>
       <button class="btn btn-release" id="retryScanBtn" style="width:100%;display:none">🔄 إعادة المحاولة</button>
-    </div>
-  </div>
-</div>
-
-<!-- PWA Install Banner -->
-<div class="install-banner" id="installBanner">
-  <div class="ib-icon">📱</div>
-  <div class="ib-text">
-    <b>ثبّت التطبيق على هاتفك</b>
-    <span>ثبّت تطبيق متابعة الجودة للوصول إليه بسرعة واستخدامه كتطبيق مستقل.</span>
-  </div>
-  <div class="ib-actions">
-    <button class="ib-install" id="btnInstallApp">تثبيت التطبيق</button>
-    <button class="ib-later" id="btnInstallLater">لاحقًا</button>
-  </div>
-</div>
-
-<!-- Install Guide Modal (step-by-step for browsers without native prompt) -->
-<div class="modal-overlay" id="installGuideModal">
-  <div class="modal">
-    <div class="guide-head">
-      <h3>📲 تثبيت التطبيق</h3>
-      <button class="guide-close" id="closeGuideBtn">✕</button>
-    </div>
-    <div class="guide-body">
-      <div><span class="guide-step-num" id="guideStepNum">1</span><span class="guide-step-title" id="guideStepTitle"></span></div>
-      <div class="guide-illustration" id="guideIllustration"></div>
-      <div class="guide-desc" id="guideStepDesc"></div>
-      <div class="guide-dots" id="guideDots"></div>
-      <div class="guide-nav">
-        <button class="btn btn-ghost" id="guidePrevBtn" style="flex:1">السابق</button>
-        <button class="btn btn-primary" id="guideNextBtn" style="flex:1">التالي</button>
-      </div>
     </div>
   </div>
 </div>
@@ -768,6 +761,27 @@ function durationText(startIso, endIso){
   if(hrs < 24) return hrs + ' س ' + (mins%60) + ' د';
   const days = Math.floor(hrs/24);
   return days + ' يوم ' + (hrs%24) + ' س';
+}
+// ---- Excel export helpers: produce real Date / numeric cells (not localized
+// text) so Excel treats them as genuine dates/numbers — sortable, filterable
+// via AutoFilter's Date/Number filters, and always rendered with plain
+// Western digits regardless of the workbook's Arabic numeral display setting.
+function toExcelDateOrBlank(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d)) return '';
+  return d;
+}
+function durationDaysFraction(startIso, endIso){
+  const ms = new Date(endIso) - new Date(startIso);
+  if(isNaN(ms)) return '';
+  return ms / 86400000; // Excel stores time internally as a fraction of one day
+}
+function setColumnFormat(ws, colIndex, dataRowCount, fmt){
+  for(let r=1; r<=dataRowCount; r++){
+    const addr = XLSX.utils.encode_cell({ r, c: colIndex });
+    if(ws[addr]) ws[addr].z = fmt;
+  }
 }
 function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
 async function withRetry(fn, label, maxAttempts){
@@ -939,6 +953,9 @@ function recordFromRow(row){
     model: row['الموديل'] || '',
     quantity: row['الكمية'] || '',
     productType: row['نوع_المنتج'] || '',
+    causeCategory: row['فئة_السبب'] || '',
+    causeSource: row['مصدر_السبب'] || '',
+    line: row['الخط'] || '',
     isolateNotes: row['ملاحظات_العزل'] || '',
     isolatedAt: row['تاريخ_ووقت_العزل'] || '',
     isolatedByUsername: row['عازل_اسم_الدخول'] || '',
@@ -949,6 +966,7 @@ function recordFromRow(row){
     releasedByUsername: row['محرر_اسم_الدخول'] || '',
     releasedBy: row['محرر_الاسم_الكامل'] || '',
     releasedByPosition: row['محرر_المنصب'] || '',
+    releaseType: row['نوع_التحرير'] || '',
     releaseNotes: row['ملاحظات_التحرير'] || ''
   };
 }
@@ -959,6 +977,9 @@ function recordToRow(r){
     'الموديل': r.model,
     'الكمية': r.quantity,
     'نوع_المنتج': r.productType,
+    'فئة_السبب': r.causeCategory || '',
+    'مصدر_السبب': r.causeSource || '',
+    'الخط': r.line || '',
     'ملاحظات_العزل': r.isolateNotes,
     'تاريخ_ووقت_العزل': r.isolatedAt,
     'عازل_اسم_الدخول': r.isolatedByUsername,
@@ -969,6 +990,7 @@ function recordToRow(r){
     'محرر_اسم_الدخول': r.releasedByUsername || '',
     'محرر_الاسم_الكامل': r.releasedBy || '',
     'محرر_المنصب': r.releasedByPosition || '',
+    'نوع_التحرير': r.releaseType || '',
     'ملاحظات_التحرير': r.releaseNotes || ''
   };
 }
@@ -1020,39 +1042,11 @@ async function initAuth(){
 function renderLoginScreen(){
   $('loginScreen').style.display = 'block';
   $('mainApp').style.display = 'none';
-  if(authUsers.length === 0){
-    $('setupCard').style.display = 'block';
-    $('loginCard').style.display = 'none';
-  }else{
-    $('setupCard').style.display = 'none';
-    $('loginCard').style.display = 'block';
-    const sel = $('li_username');
-    const activeUsers = authUsers.filter(u => u.active !== false);
-    sel.innerHTML = activeUsers.map(u => `<option value="${escapeHtml(u.username)}">${escapeHtml(u.fullName)}</option>`).join('');
-  }
+  $('loginCard').style.display = 'block';
+  const sel = $('li_username');
+  const activeUsers = authUsers.filter(u => u.active !== false);
+  sel.innerHTML = activeUsers.map(u => `<option value="${escapeHtml(u.username)}">${escapeHtml(u.fullName)}</option>`).join('');
 }
-
-$('btnSetup').addEventListener('click', async ()=>{
-  const fullName = $('su_fullname').value.trim();
-  const username = $('su_username').value.trim().toLowerCase();
-  const pin = String($('su_pin').value.trim());
-  const position = 'Superviseur';
-  if(!fullName || !username || pin.length !== 6 || !/^\d{6}$/.test(pin)){
-    showToast('يرجى إدخال الرمز السري'); return;
-  }
-  const btn = $('btnSetup');
-  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
-  const user = { fullName, username, pin, position, active:true };
-  const ok = await safeAppend('users', userToRow(user), 'setup');
-  btn.disabled = false; btn.textContent = 'إنشاء حساب المشرف والدخول';
-  if(ok){
-    authUsers.push(user);
-    savePersonal('condor_session_v1', username);
-    currentUser = user;
-    showToast('✅ تم إنشاء حساب المشرف');
-    await bootMainApp();
-  }
-});
 
 $('btnLogin').addEventListener('click', async ()=>{
   const username = $('li_username').value;
@@ -1102,7 +1096,6 @@ async function bootMainApp(){
   await refreshClassifications();
   render();
   restoreDraftPallet();
-  maybeShowInstallBanner();
 }
 
 async function refreshRecords(){
@@ -1577,12 +1570,14 @@ $('exportClassifyBtn').addEventListener('click', ()=>{
   const headers = ['الرقم التسلسلي','الموديل','نوع المنتج','التصنيف','سبب التصنيف','المستخدم','منصب المستخدم','تاريخ ووقت التصنيف','حالة المجموعة'];
   const rows = classifications.map(c=>[
     c.serialNumber, c.model, c.productType, c.grade, c.reason||'',
-    c.classifiedBy, c.classifiedByPosition||'', fmtDateTime(c.classifiedAt),
+    c.classifiedBy, c.classifiedByPosition||'', toExcelDateOrBlank(c.classifiedAt),
     c.groupStatus || CLASSIFY_STATUS_PENDING
   ]);
   const wsData = [headers, ...rows];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols'] = headers.map(()=>({ wch: 18 }));
+  setColumnFormat(ws, 7, classifications.length, 'yyyy-mm-dd hh:mm'); // تاريخ ووقت التصنيف
+  ws['!autofilter'] = { ref: ws['!ref'] };
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'سجل التصنيف');
   XLSX.writeFile(wb, 'سجل_تصنيف_المنتجات_' + new Date().toISOString().slice(0,10) + '.xlsx');
@@ -1787,6 +1782,13 @@ $('btnIsolate').addEventListener('click', async ()=>{
 });
 
 async function doIsolateSave(pallet, model, type, qty){
+  const causeCategory = $('f_causeCategory').value;
+  const causeSource = $('f_causeSource').value;
+  const line = $('f_line').value;
+  if(!causeCategory || !causeSource || !line){
+    showToast('⚠️ يرجى اختيار فئة السبب ومصدر السبب والخط');
+    return;
+  }
   const notes = $('f_notes').value.trim();
   const btn = $('btnIsolate');
   btn.disabled = true; btn.textContent = 'جاري التحقق...';
@@ -1811,6 +1813,7 @@ async function doIsolateSave(pallet, model, type, qty){
   const rec = {
     id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
     palletNumber: pallet, model, quantity: qty, productType: type, isolateNotes: notes,
+    causeCategory: causeCategory, causeSource: causeSource, line: line,
     isolatedAt: new Date().toISOString(),
     isolatedBy: currentUser.fullName, isolatedByUsername: currentUser.username,
     isolatedByPosition: currentUser.position || '',
@@ -1847,13 +1850,43 @@ async function doIsolateSave(pallet, model, type, qty){
     records.unshift(rec);
 
     showToast('✅ تم عزل البليط ' + pallet);
-    $('f_pallet').value=''; $('f_notes').value='';
+    $('f_pallet').value='';
     $('scanHint').textContent='';
     saveDraftPallet('');
-    resetIsolateFormState();
     render();
+    openKeepDataModal();
   }
 }
+
+/* ---------- POST-ISOLATE: KEEP DATA FOR NEXT PALLET ---------- */
+function openKeepDataModal(){
+  $('keepDataModal').classList.add('show');
+}
+function closeKeepDataModal(){
+  $('keepDataModal').classList.remove('show');
+}
+$('keepDataYes').addEventListener('click', ()=>{
+  closeKeepDataModal();
+  // Keep the previously entered model/type/quantity/cause details/notes as-is —
+  // only the pallet-matching state is reset so the next pallet can be scanned fresh.
+  matchedCatalogEntry = null;
+  newProductConfirmed = false;
+  newProductConfirmedPallet = '';
+  $('f_model').disabled = false;
+  $('f_type').disabled = false;
+  $('f_qty').disabled = false;
+  $('f_lockNote').style.display = 'none';
+  $('f_pallet').focus();
+});
+$('keepDataNo').addEventListener('click', ()=>{
+  closeKeepDataModal();
+  $('f_notes').value = '';
+  $('f_causeCategory').value = '';
+  $('f_causeSource').value = '';
+  $('f_line').value = '';
+  resetIsolateFormState();
+  $('f_pallet').focus();
+});
 
 /* ---------- RELEASE ---------- */
 function openReleaseModal(id){
@@ -1861,6 +1894,7 @@ function openReleaseModal(id){
   if(!rec) return;
   releaseTargetId = id;
   $('releaseModalSub').textContent = 'البليط ' + rec.palletNumber + ' — موديل ' + rec.model;
+  $('releaseType').value = '';
   $('releaseNotes').value = '';
   $('releaseModal').classList.add('show');
 }
@@ -1869,6 +1903,8 @@ $('confirmRelease').addEventListener('click', async ()=>{
   if(!releaseTargetId) return;
   const rec = records.find(r=>r.id===releaseTargetId);
   if(!rec) return;
+  const releaseType = $('releaseType').value;
+  if(!releaseType){ showToast('⚠️ يرجى اختيار نوع التحرير'); return; }
   const btn = $('confirmRelease');
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
 
@@ -1878,10 +1914,11 @@ $('confirmRelease').addEventListener('click', async ()=>{
     'محرر_اسم_الدخول': currentUser.username,
     'محرر_الاسم_الكامل': currentUser.fullName,
     'محرر_المنصب': currentUser.position || '',
+    'نوع_التحرير': releaseType,
     'ملاحظات_التحرير': $('releaseNotes').value.trim()
   };
   const ok = await safeUpdate('records', 'معرف', rec.id, updates, 'release');
-  btn.disabled = false; btn.textContent = '✅ تأكيد التحرير';
+  btn.disabled = false; btn.textContent = '🔓 تحرير';
   if(ok){
     showToast('✅ تم تحرير البليط ' + rec.palletNumber);
     $('releaseModal').classList.remove('show'); releaseTargetId = null;
@@ -2249,8 +2286,11 @@ function render(){
           <div class="card-meta">
             <div>النوع: <b>${escapeHtml(r.productType)}</b></div>
             <div>الكمية: <b>${escapeHtml(String(r.quantity||'—'))}</b></div>
+            <div>فئة السبب: <b>${escapeHtml(r.causeCategory||'—')}</b></div>
+            <div>مصدر السبب: <b>${escapeHtml(r.causeSource||'—')}</b></div>
+            <div>الخط: <b>${escapeHtml(r.line||'—')}</b></div>
             <div>عزلها: <b>${escapeHtml(r.isolatedBy)}${r.isolatedByPosition ? ' — ' + escapeHtml(r.isolatedByPosition) : ''}</b></div>
-            <div>🕒 وقت العزل: <b>${fmtDateTime(r.isolatedAt)}</b></div>
+            <div style="grid-column:1/3">🕒 وقت العزل: <b>${fmtDateTime(r.isolatedAt)}</b></div>
           </div>
           ${r.isolateNotes ? `<div class="card-notes">${escapeHtml(r.isolateNotes)}</div>` : ''}
           <div class="card-footer"><button class="btn btn-release" onclick="openReleaseModal('${r.id}')">🔓 تحرير البليط</button></div>
@@ -2322,12 +2362,16 @@ function render(){
           <div class="card-meta">
             <div>النوع: <b>${escapeHtml(r.productType)}</b></div>
             <div>الكمية: <b>${escapeHtml(String(r.quantity||'—'))}</b></div>
+            <div>فئة السبب: <b>${escapeHtml(r.causeCategory||'—')}</b></div>
+            <div>مصدر السبب: <b>${escapeHtml(r.causeSource||'—')}</b></div>
+            <div>الخط: <b>${escapeHtml(r.line||'—')}</b></div>
             <div>الحالة: <b>${isReleased?'محررة':'معزولة'}</b></div>
             <div>عزلها: <b>${escapeHtml(r.isolatedBy)}${r.isolatedByPosition ? ' — ' + escapeHtml(r.isolatedByPosition) : ''}</b></div>
             <div style="grid-column:1/3">🕒 وقت العزل: <b>${fmtDateTime(r.isolatedAt)}</b></div>
             ${isReleased ? `
             <div>حررها: <b>${escapeHtml(r.releasedBy)}${r.releasedByPosition ? ' — ' + escapeHtml(r.releasedByPosition) : ''}</b></div>
             <div>🕒 وقت التحرير: <b>${fmtDateTime(r.releasedAt)}</b></div>
+            <div>نوع التحرير: <b>${escapeHtml(r.releaseType||'—')}</b></div>
             <div style="grid-column:1/3">⏱ مدة العزل: <b>${durationText(r.isolatedAt, r.releasedAt)}</b></div>` : ''}
           </div>
           ${r.isolateNotes ? `<div class="card-notes">🔴 عزل: ${escapeHtml(r.isolateNotes)}</div>` : ''}
@@ -2382,15 +2426,21 @@ function render(){
 /* ---------- EXCEL (.xlsx) EXPORT ---------- */
 $('exportBtn').addEventListener('click', ()=>{
   if(records.length===0){ showToast('لا توجد بيانات للتصدير'); return; }
-  const headers = ['رقم البليط','الموديل','الكمية','نوع المنتج','الحالة','عزل بواسطة','منصب العازل','وقت العزل','ملاحظات العزل','حرر بواسطة','منصب المحرر','وقت التحرير','ملاحظات التحرير'];
+  const headers = ['رقم البليط','الموديل','الكمية','نوع المنتج','فئة السبب','مصدر السبب','الخط','الحالة','عزل بواسطة','منصب العازل','وقت العزل','ملاحظات العزل','حرر بواسطة','منصب المحرر','وقت التحرير','نوع التحرير','ملاحظات التحرير','المدة (س:د)'];
+  const nowIsoForExport = new Date().toISOString();
   const rows = records.map(r=>[
-    r.palletNumber, r.model, r.quantity, r.productType, r.status,
-    r.isolatedBy, r.isolatedByPosition||'', fmtDateTime(r.isolatedAt), r.isolateNotes||'',
-    r.releasedBy||'', r.releasedByPosition||'', r.releasedAt?fmtDateTime(r.releasedAt):'', r.releaseNotes||''
+    r.palletNumber, r.model, r.quantity, r.productType, r.causeCategory||'', r.causeSource||'', r.line||'', r.status,
+    r.isolatedBy, r.isolatedByPosition||'', toExcelDateOrBlank(r.isolatedAt), r.isolateNotes||'',
+    r.releasedBy||'', r.releasedByPosition||'', toExcelDateOrBlank(r.releasedAt), r.releaseType||'', r.releaseNotes||'',
+    durationDaysFraction(r.isolatedAt, r.releasedAt ? r.releasedAt : nowIsoForExport)
   ]);
   const wsData = [headers, ...rows];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols'] = headers.map(()=>({ wch: 18 }));
+  setColumnFormat(ws, 10, records.length, 'yyyy-mm-dd hh:mm'); // وقت العزل
+  setColumnFormat(ws, 14, records.length, 'yyyy-mm-dd hh:mm'); // وقت التحرير
+  setColumnFormat(ws, 17, records.length, '[h]:mm'); // المدة
+  ws['!autofilter'] = { ref: ws['!ref'] };
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'سجل العزل');
   XLSX.writeFile(wb, 'سجل_عزل_البليط_' + new Date().toISOString().slice(0,10) + '.xlsx');
@@ -2398,166 +2448,30 @@ $('exportBtn').addEventListener('click', ()=>{
 $('exportActiveBtn').addEventListener('click', ()=>{
   const active = records.filter(r=>r.status===STATUS_ISOLATED);
   if(active.length===0){ showToast('لا توجد منتجات معزولة حاليًا للتصدير'); return; }
-  const headers = ['رقم البليط','الموديل','الكمية','نوع المنتج','عزل بواسطة','منصب العازل','وقت العزل','ملاحظات العزل'];
+  const headers = ['رقم البليط','الموديل','الكمية','نوع المنتج','فئة السبب','مصدر السبب','الخط','عزل بواسطة','منصب العازل','وقت العزل','ملاحظات العزل','المدة الحالية (س:د)'];
+  const nowIsoForActiveExport = new Date().toISOString();
   const rows = active.map(r=>[
-    r.palletNumber, r.model, r.quantity, r.productType,
-    r.isolatedBy, r.isolatedByPosition||'', fmtDateTime(r.isolatedAt), r.isolateNotes||''
+    r.palletNumber, r.model, r.quantity, r.productType, r.causeCategory||'', r.causeSource||'', r.line||'',
+    r.isolatedBy, r.isolatedByPosition||'', toExcelDateOrBlank(r.isolatedAt), r.isolateNotes||'',
+    durationDaysFraction(r.isolatedAt, nowIsoForActiveExport)
   ]);
   const wsData = [headers, ...rows];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols'] = headers.map(()=>({ wch: 18 }));
+  setColumnFormat(ws, 9, active.length, 'yyyy-mm-dd hh:mm'); // وقت العزل
+  setColumnFormat(ws, 11, active.length, '[h]:mm'); // المدة الحالية
+  ws['!autofilter'] = { ref: ws['!ref'] };
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'المعزولة حاليًا');
   XLSX.writeFile(wb, 'المنتجات_المعزولة_' + new Date().toISOString().slice(0,10) + '.xlsx');
 });
 
-/* =====================================================================
-   PWA: install banner + step-by-step install guide + service worker
-   ===================================================================== */
-let deferredInstallPrompt = null;
-const INSTALL_DISMISS_KEY = 'condor_install_dismissed_v1';
-const INSTALL_DISMISS_DAYS = 7;
-
-function isStandalone(){
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-}
-function wasRecentlyDismissed(){
-  const ts = loadPersonal(INSTALL_DISMISS_KEY);
-  if(!ts) return false;
-  const days = (Date.now() - Number(ts)) / (1000*60*60*24);
-  return days < INSTALL_DISMISS_DAYS;
-}
-function maybeShowInstallBanner(){
-  if(isStandalone()) return;
-  if(wasRecentlyDismissed()) return;
-  $('installBanner').classList.add('show');
-}
-function hideInstallBanner(dismiss){
-  $('installBanner').classList.remove('show');
-  if(dismiss) savePersonal(INSTALL_DISMISS_KEY, String(Date.now()));
-}
-
-window.addEventListener('beforeinstallprompt', (e)=>{
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  if(currentUser) maybeShowInstallBanner();
-});
-window.addEventListener('appinstalled', ()=>{
-  hideInstallBanner(true);
-  showToast('✅ تم تثبيت التطبيق بنجاح');
-});
-
-$('btnInstallLater').addEventListener('click', ()=> hideInstallBanner(true));
-
-$('btnInstallApp').addEventListener('click', async ()=>{
-  if(deferredInstallPrompt){
-    hideInstallBanner(false);
-    deferredInstallPrompt.prompt();
-    try{
-      await deferredInstallPrompt.userChoice;
-    }catch(e){}
-    deferredInstallPrompt = null;
-  }else{
-    hideInstallBanner(false);
-    openInstallGuide();
-  }
-});
-
-/* ---- Step-by-step guide (Android/Chrome + iPhone/Safari) ---- */
-function detectPlatform(){
-  const ua = navigator.userAgent || '';
-  const isIOS = /iphone|ipad|ipod/i.test(ua);
-  const isAndroid = /android/i.test(ua);
-  return isIOS ? 'ios' : (isAndroid ? 'android' : 'android');
-}
-function iconSvg(name){
-  const icons = {
-    chromeMenu: '<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#141a3d" stroke-width="2"><circle cx="12" cy="5" r="1.5" fill="#141a3d"/><circle cx="12" cy="12" r="1.5" fill="#141a3d"/><circle cx="12" cy="19" r="1.5" fill="#141a3d"/></svg>',
-    installIcon: '<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#3a6ea8" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 19h14"/></svg>',
-    homeScreen: '<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#4c7a56" stroke-width="2"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>',
-    shareIcon: '<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#3a6ea8" stroke-width="2"><path d="M12 3v12m0-12l-4 4m4-4l4 4"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>',
-    addSquare: '<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#e2a233" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>',
-    browser: '<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#141a3d" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>'
-  };
-  return icons[name] || icons.browser;
-}
-const guideSteps = {
-  android: [
-    { title: 'افتح الموقع في Google Chrome', icon:'browser', desc:'تأكد من أنك تتصفح الموقع باستخدام متصفح Google Chrome على جهازك.' },
-    { title: 'اضغط على قائمة ⋮', icon:'chromeMenu', desc:'اضغط على أيقونة النقاط الثلاث (⋮) أعلى يمين المتصفح لفتح القائمة.' },
-    { title: 'اختر "تثبيت التطبيق"', icon:'installIcon', desc:'ابحث عن خيار "تثبيت التطبيق" أو "Install app" أو "Add to Home screen" واضغط عليه.' },
-    { title: 'اضغط تثبيت', icon:'addSquare', desc:'أكّد الإجراء بالضغط على زر "تثبيت" في النافذة التي تظهر.' },
-    { title: 'سيظهر التطبيق على الشاشة الرئيسية', icon:'homeScreen', desc:'ستجد أيقونة Condor CQ على الشاشة الرئيسية لهاتفك جاهزة للاستخدام كتطبيق مستقل.' }
-  ],
-  ios: [
-    { title: 'افتح الموقع في Safari', icon:'browser', desc:'تأكد من أنك تتصفح الموقع باستخدام متصفح Safari على جهاز iPhone.' },
-    { title: 'اضغط زر المشاركة', icon:'shareIcon', desc:'اضغط على أيقونة المشاركة (مربع مع سهم للأعلى) أسفل الشاشة.' },
-    { title: 'اختر "Add to Home Screen"', icon:'addSquare', desc:'مرر لأسفل في القائمة واختر "إضافة إلى الشاشة الرئيسية / Add to Home Screen".' },
-    { title: 'اضغط Add / إضافة', icon:'installIcon', desc:'اضغط على زر "إضافة" أعلى يمين الشاشة لتأكيد الإجراء.' },
-    { title: 'سيظهر التطبيق على الشاشة الرئيسية', icon:'homeScreen', desc:'ستجد أيقونة Condor CQ على الشاشة الرئيسية لجهازك جاهزة للاستخدام كتطبيق مستقل.' }
-  ]
-};
-let guideIndex = 0;
-let guidePlatform = 'android';
-function openInstallGuide(){
-  guidePlatform = detectPlatform();
-  guideIndex = 0;
-  $('installGuideModal').classList.add('show');
-  renderGuideStep();
-}
-function closeInstallGuide(){
-  $('installGuideModal').classList.remove('show');
-}
-function renderGuideStep(){
-  const steps = guideSteps[guidePlatform];
-  const step = steps[guideIndex];
-  $('guideStepNum').textContent = String(guideIndex+1);
-  $('guideStepTitle').textContent = step.title;
-  $('guideStepDesc').textContent = step.desc;
-  $('guideIllustration').innerHTML = iconSvg(step.icon);
-  $('guideDots').innerHTML = steps.map((s,i)=>`<span class="${i===guideIndex?'active':''}"></span>`).join('');
-  $('guidePrevBtn').disabled = guideIndex === 0;
-  $('guideNextBtn').textContent = guideIndex === steps.length-1 ? 'إنهاء' : 'التالي';
-}
-$('guidePrevBtn').addEventListener('click', ()=>{
-  if(guideIndex>0){ guideIndex--; renderGuideStep(); }
-});
-$('guideNextBtn').addEventListener('click', ()=>{
-  const steps = guideSteps[guidePlatform];
-  if(guideIndex < steps.length-1){ guideIndex++; renderGuideStep(); }
-  else{ closeInstallGuide(); }
-});
-$('closeGuideBtn').addEventListener('click', closeInstallGuide);
-$('installGuideModal').addEventListener('click', (e)=>{ if(e.target.id==='installGuideModal') closeInstallGuide(); });
-
-/* ---- Register service worker ---- */
+/* ---- Register service worker (keeps the app installable/offline-capable) ---- */
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('SW registration failed', err));
   });
 }
-
-/* ---- Link manifest (kept here so this single index.html stays the source of truth) ---- */
-(function ensureManifestLink(){
-  if(!document.querySelector('link[rel="manifest"]')){
-    const link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = './manifest.json';
-    document.head.appendChild(link);
-  }
-  if(!document.querySelector('meta[name="theme-color"]')){
-    const meta = document.createElement('meta');
-    meta.name = 'theme-color';
-    meta.content = '#141a3d';
-    document.head.appendChild(meta);
-  }
-  if(!document.querySelector('link[rel="apple-touch-icon"]')){
-    const link = document.createElement('link');
-    link.rel = 'apple-touch-icon';
-    link.href = './icons/icon-192.png';
-    document.head.appendChild(link);
-  }
-})();
 
 /* ---------- INIT ---------- */
 (async function init(){
