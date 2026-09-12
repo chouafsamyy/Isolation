@@ -269,6 +269,20 @@
   #editGroupList .list-row{align-items:flex-start;}
   #editGroupList .list-row .grow .field{margin-bottom:0;}
   #editGroupList .list-row .grow .field + .field{margin-top:8px;}
+
+  /* Active-tab view mode switch (supervisor only) */
+  .view-switch{display:flex;gap:6px;margin-bottom:14px;background:var(--panel-soft);border:1px solid var(--line);padding:4px;border-radius:12px;}
+  .view-switch button{
+    flex:1; text-align:center; padding:9px 4px; border-radius:9px;
+    font-family:'Cairo',sans-serif; font-weight:800; font-size:12.5px; color:var(--ink-soft);
+    cursor:pointer; border:none; background:transparent; transition:all .15s;
+  }
+  .view-switch button.active{background:var(--panel);color:var(--ink);box-shadow:var(--shadow);}
+  .model-summary-card{background:var(--panel-soft);border:1px solid var(--line);border-inline-start:6px solid var(--blue);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
+  .model-summary-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .model-summary-name{font-family:'Cairo',sans-serif;font-weight:800;font-size:15.5px;}
+  .model-summary-qty{font-family:'Cairo',sans-serif;font-weight:900;font-size:16px;background:var(--blue-bg);color:var(--blue);padding:3px 12px;border-radius:8px;white-space:nowrap;}
+  .model-summary-sub{margin-top:6px;font-size:12.5px;color:var(--ink-soft);}
 </style>
 </head>
 <body>
@@ -403,7 +417,11 @@
 
   <!-- ACTIVE TAB -->
   <div class="tab-content" id="tab-active" style="display:none">
-    <div class="filter-panel">
+    <div class="view-switch" id="activeViewSwitch" style="display:none">
+      <button type="button" class="active" data-view="list">📋 القائمة الحالية</button>
+      <button type="button" data-view="byModel">📦 عرض حسب الموديل</button>
+    </div>
+    <div class="filter-panel" id="activeFilterPanel">
       <div class="filter-row">
         <div class="scan-row" style="flex:1">
           <input type="text" id="active_search" placeholder="ابحث برقم البليط (يدويًا أو بالسكانير)" autocomplete="off">
@@ -723,6 +741,8 @@ let newProductConfirmedPallet = ''; // the exact pallet value that was confirmed
 // Active-tab search/filter state
 let activeSearchQuery = '';
 let activeModelFilter = '';
+// Active-tab view mode (supervisor only): 'list' (default, unchanged) or 'byModel' (grouped summary)
+let activeViewMode = 'list';
 
 // History-tab search/filter state
 let historySearchQuery = '';
@@ -771,6 +791,17 @@ function toExcelDateOrBlank(iso){
   const d = new Date(iso);
   if(isNaN(d)) return '';
   return d;
+}
+// Convert a quantity value (which may come in as a string, with stray spaces,
+// a comma decimal separator, etc.) into a genuine JS number for Excel, so the
+// exported cell is a real numeric value usable in SUM/AVERAGE and other
+// formulas — never text. Returns '' (blank cell) when there is nothing usable.
+function toExcelNumberOrBlank(val){
+  if(val === '' || val === null || val === undefined) return '';
+  const cleaned = String(val).trim().replace(',', '.');
+  if(cleaned === '') return '';
+  const n = Number(cleaned);
+  return isNaN(n) ? '' : n;
 }
 function durationDaysFraction(startIso, endIso){
   const ms = new Date(endIso) - new Date(startIso);
@@ -1089,6 +1120,11 @@ async function bootMainApp(){
   $('exportWrap').style.display = currentUser.position === 'Superviseur' ? 'block' : 'none';
   $('exportActiveWrap').style.display = currentUser.position === 'Superviseur' ? 'block' : 'none';
   $('exportClassifyWrap').style.display = currentUser.position === 'Superviseur' ? 'block' : 'none';
+  $('activeViewSwitch').style.display = currentUser.position === 'Superviseur' ? 'flex' : 'none';
+  if(currentUser.position !== 'Superviseur'){
+    // Non-supervisors only ever see the unchanged default list view.
+    activeViewMode = 'list';
+  }
 
   await refreshCatalog();
   await refreshRecords();
@@ -1145,6 +1181,17 @@ document.querySelectorAll('#tabsBar .tab').forEach(t=>{
     }
     render();
     if(currentTab === 'isolate') restoreDraftPallet();
+  });
+});
+
+/* ---------- ACTIVE TAB: VIEW MODE SWITCH (supervisor only) ---------- */
+document.querySelectorAll('#activeViewSwitch button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    if(!currentUser || currentUser.position !== 'Superviseur') return;
+    document.querySelectorAll('#activeViewSwitch button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeViewMode = btn.dataset.view;
+    render();
   });
 });
 
@@ -2218,6 +2265,22 @@ $('clearActiveFilters').addEventListener('click', ()=>{
   render();
 });
 
+/* ---------- ACTIVE TAB: GROUP-BY-MODEL SUMMARY (supervisor view only) ----------
+   Pure read-side aggregation — does not touch `records` or how isolation is
+   registered; it only reshapes the already-filtered active list for display. */
+function computeActiveModelGroups(list){
+  const map = new Map();
+  list.forEach(r=>{
+    const model = r.model || '—';
+    if(!map.has(model)) map.set(model, { model, totalQty: 0, count: 0 });
+    const g = map.get(model);
+    const qty = parseFloat(String(r.quantity||'').trim().replace(',', '.'));
+    if(!isNaN(qty)) g.totalQty += qty;
+    g.count += 1;
+  });
+  return [...map.values()].sort((a,b)=> b.totalQty - a.totalQty || a.model.localeCompare(b.model));
+}
+
 /* ---------- HISTORY TAB: SEARCH & MODEL FILTER ---------- */
 function populateHistoryModelFilter(allRecords){
   const sel = $('history_modelFilter');
@@ -2263,6 +2326,7 @@ function render(){
   $('countActive').textContent = active.length;
 
   if(currentTab === 'active'){
+    const isSupervisor = currentUser && currentUser.position === 'Superviseur';
     populateActiveModelFilter(active);
 
     let filtered = active;
@@ -2275,7 +2339,26 @@ function render(){
     }
 
     const el = $('activeList');
-    if(active.length === 0){
+
+    if(isSupervisor && activeViewMode === 'byModel'){
+      // Grouped-by-model summary view (supervisor only). Display-only —
+      // the underlying `records` data and isolation flow are untouched.
+      if(active.length === 0){
+        el.innerHTML = '<div class="empty"><div class="icon">✅</div><p>لا توجد بليط معزولة حاليًا</p></div>';
+      }else if(filtered.length === 0){
+        el.innerHTML = '<div class="empty"><div class="icon">🔎</div><p>لا توجد نتائج مطابقة للبحث / الفلتر</p></div>';
+      }else{
+        const groups = computeActiveModelGroups(filtered);
+        el.innerHTML = groups.map(g=>`
+          <div class="model-summary-card">
+            <div class="model-summary-top">
+              <div class="model-summary-name">📦 ${escapeHtml(g.model)}</div>
+              <div class="model-summary-qty">${g.totalQty}</div>
+            </div>
+            <div class="model-summary-sub">عدد البليطات المعزولة: <b>${g.count}</b></div>
+          </div>`).join('');
+      }
+    }else if(active.length === 0){
       el.innerHTML = '<div class="empty"><div class="icon">✅</div><p>لا توجد بليط معزولة حاليًا</p></div>';
     }else if(filtered.length === 0){
       el.innerHTML = '<div class="empty"><div class="icon">🔎</div><p>لا توجد نتائج مطابقة للبحث / الفلتر</p></div>';
@@ -2429,7 +2512,7 @@ $('exportBtn').addEventListener('click', ()=>{
   const headers = ['رقم البليط','الموديل','الكمية','نوع المنتج','فئة السبب','مصدر السبب','الخط','الحالة','عزل بواسطة','منصب العازل','وقت العزل','ملاحظات العزل','حرر بواسطة','منصب المحرر','وقت التحرير','نوع التحرير','ملاحظات التحرير','المدة (س:د)'];
   const nowIsoForExport = new Date().toISOString();
   const rows = records.map(r=>[
-    r.palletNumber, r.model, r.quantity, r.productType, r.causeCategory||'', r.causeSource||'', r.line||'', r.status,
+    r.palletNumber, r.model, toExcelNumberOrBlank(r.quantity), r.productType, r.causeCategory||'', r.causeSource||'', r.line||'', r.status,
     r.isolatedBy, r.isolatedByPosition||'', toExcelDateOrBlank(r.isolatedAt), r.isolateNotes||'',
     r.releasedBy||'', r.releasedByPosition||'', toExcelDateOrBlank(r.releasedAt), r.releaseType||'', r.releaseNotes||'',
     durationDaysFraction(r.isolatedAt, r.releasedAt ? r.releasedAt : nowIsoForExport)
@@ -2437,6 +2520,7 @@ $('exportBtn').addEventListener('click', ()=>{
   const wsData = [headers, ...rows];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols'] = headers.map(()=>({ wch: 18 }));
+  setColumnFormat(ws, 2, records.length, '0'); // الكمية — رقم صحيح حقيقي
   setColumnFormat(ws, 10, records.length, 'yyyy-mm-dd hh:mm'); // وقت العزل
   setColumnFormat(ws, 14, records.length, 'yyyy-mm-dd hh:mm'); // وقت التحرير
   setColumnFormat(ws, 17, records.length, '[h]:mm'); // المدة
@@ -2451,13 +2535,14 @@ $('exportActiveBtn').addEventListener('click', ()=>{
   const headers = ['رقم البليط','الموديل','الكمية','نوع المنتج','فئة السبب','مصدر السبب','الخط','عزل بواسطة','منصب العازل','وقت العزل','ملاحظات العزل','المدة الحالية (س:د)'];
   const nowIsoForActiveExport = new Date().toISOString();
   const rows = active.map(r=>[
-    r.palletNumber, r.model, r.quantity, r.productType, r.causeCategory||'', r.causeSource||'', r.line||'',
+    r.palletNumber, r.model, toExcelNumberOrBlank(r.quantity), r.productType, r.causeCategory||'', r.causeSource||'', r.line||'',
     r.isolatedBy, r.isolatedByPosition||'', toExcelDateOrBlank(r.isolatedAt), r.isolateNotes||'',
     durationDaysFraction(r.isolatedAt, nowIsoForActiveExport)
   ]);
   const wsData = [headers, ...rows];
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!cols'] = headers.map(()=>({ wch: 18 }));
+  setColumnFormat(ws, 2, active.length, '0'); // الكمية — رقم صحيح حقيقي
   setColumnFormat(ws, 9, active.length, 'yyyy-mm-dd hh:mm'); // وقت العزل
   setColumnFormat(ws, 11, active.length, '[h]:mm'); // المدة الحالية
   ws['!autofilter'] = { ref: ws['!ref'] };
