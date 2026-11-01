@@ -302,6 +302,7 @@
     <h2>👤 تسجيل الدخول</h2>
     <div class="sub">اختر اسمك وأدخل رمزك السري للمتابعة</div>
     <div class="field"><label>اسم المفتش</label><select id="li_username"></select></div>
+    <!-- maxlength stays 6 on purpose: existing 6-digit PINs must still be typeable. New PINs are 5 digits. -->
     <div class="field"><label>الرمز السري</label><input type="password" id="li_pin" class="pin-input" maxlength="6" inputmode="numeric" placeholder="••••••"></div>
     <button class="btn btn-primary" id="btnLogin">دخول</button>
     <div class="hint" id="loginError" style="color:var(--red);margin-top:8px;"></div>
@@ -530,7 +531,7 @@
           <div class="field"><label>اسم الدخول</label><input type="text" id="au_username" autocapitalize="off"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>الرمز السري</label><input type="password" id="au_pin" class="pin-input" maxlength="6" inputmode="numeric" placeholder="••••••"></div>
+          <div class="field"><label>الرمز السري (5 أرقام)</label><input type="password" id="au_pin" class="pin-input" maxlength="5" inputmode="numeric" placeholder="•••••"></div>
           <div class="field"><label>المنصب</label>
             <select id="au_position">
               <option value="Inspecteur PQC">Inspecteur PQC</option>
@@ -723,6 +724,10 @@ const CLASSIFY_STATUS_DONE = 'تم التصنيف';
 const CLASSIFY_STATUS_RECHERCHE = 'Recherch compte';
 const CLASSIFY_STATUS_PENDING = 'قيد الانتظار';
 
+// Length of NEW / EDITED PINs. Existing PINs (e.g. 6 digits) keep working at login,
+// because login only compares the typed value with the stored one.
+const PIN_LENGTH = 5;
+
 let records = [];
 let authUsers = [];
 let catalog = [];
@@ -829,6 +834,20 @@ async function withRetry(fn, label, maxAttempts){
   throw lastErr;
 }
 
+/* ---------- HAPTIC FEEDBACK (vibration on successful barcode scan) ----------
+   Uses the Vibration API (Android Chrome / Edge / Firefox / Samsung Internet...).
+   Safari on iPhone does not implement it, so the call is silently skipped there.
+   Wrapped in try/catch so it can never break the scan flow. */
+function vibrateOnScan(){
+  try{
+    const nav = navigator;
+    const vibrate = nav.vibrate || nav.webkitVibrate || nav.mozVibrate || nav.msVibrate;
+    if(typeof vibrate === 'function'){
+      vibrate.call(nav, 120); // short pulse (120 ms)
+    }
+  }catch(e){ /* unsupported or blocked — ignore */ }
+}
+
 /* ---------- FIRESTORE DATABASE (generic API) ----------
    نفس التوقيعات (list/append/update/delete/checkDuplicate) التي كانت تُنفَّذ
    سابقًا عبر Google Apps Script، لكنها الآن تخاطب Firestore مباشرة من المتصفح.
@@ -881,8 +900,8 @@ async function gasAppend(sheetKey, row){
   return true;
 }
 async function gasUpdate(sheetKey, column, value, updates){
-  // في هذا التطبيق يكون "column" دائمًا هو نفس الحقل المستعمل كمعرف الوثيقة
-  // (معرف لسجلات records/classifications، اسم_الدخول لـ users) لذا نستطيع الوصول مباشرة.
+  // في هذا التطبيق يكون "value" هو معرف الوثيقة الفعلي في Firestore
+  // (للمستخدمين: u.docId وليس اسم الدخول، لأن الحسابات القديمة قد يختلف معرفها عن اسم الدخول بعد تحويله لأحرف صغيرة).
   await db.collection(sheetKey).doc(String(value)).update(updates);
   return true;
 }
@@ -937,9 +956,13 @@ function normalizePosition(row){
   return position;
 }
 function userFromRow(row){
+  const rawUsername = String(row['اسم_الدخول'] || '');
   return {
+    // Real Firestore document ID — used for update/delete. It can differ from the
+    // (lower-cased) username for older accounts, which is why deleting used to fail silently.
+    docId: row['_id'] ? String(row['_id']) : rawUsername,
     fullName: row['الاسم_الكامل'] || '',
-    username: String(row['اسم_الدخول'] || '').toLowerCase(),
+    username: rawUsername.toLowerCase(),
     pin: String(row['الرمز_السري'] || ''),
     position: normalizePosition(row),
     active: row['نشط'] === false || String(row['نشط']).toUpperCase() === 'FALSE' ? false : true
@@ -1756,6 +1779,7 @@ function stopScanner(){
 function onScanSuccess(decodedText){
   if(!scannerRunning) return; // avoid double-fire while stopping
   scannerRunning = false;
+  vibrateOnScan(); // short haptic pulse confirming a successful read (where supported)
   const value = decodedText.trim();
   closeScanModal();
 
@@ -2075,14 +2099,17 @@ $('btnAddUser').addEventListener('click', async ()=>{
   const username = $('au_username').value.trim().toLowerCase();
   const pin = String($('au_pin').value.trim());
   const position = $('au_position').value;
+  const pinRegex = new RegExp('^\\d{' + PIN_LENGTH + '}$');
 
   if(editingUserUsername){
     // Edit mode: PIN optional (blank = keep unchanged); username locked (it's the record key).
     if(!fullName){ showToast('يرجى إدخال الاسم الكامل'); return; }
-    if(pin && (pin.length!==6 || !/^\d{6}$/.test(pin))){ showToast('الرمز السري يجب أن يكون 6 أرقام أو يُترك فارغًا'); return; }
+    if(pin && !pinRegex.test(pin)){ showToast('الرمز السري يجب أن يكون ' + PIN_LENGTH + ' أرقام أو يُترك فارغًا'); return; }
+    const target = authUsers.find(x=>x.username===editingUserUsername);
+    if(!target){ showToast('⚠️ الحساب غير موجود'); return; }
     const updates = { 'الاسم_الكامل': fullName, 'المنصب': position };
     if(pin) updates['الرمز_السري'] = pin;
-    const ok = await safeUpdate('users', 'اسم_الدخول', editingUserUsername, updates, 'editUser');
+    const ok = await safeUpdate('users', 'اسم_الدخول', target.docId, updates, 'editUser');
     if(ok){
       showToast('✅ تم حفظ التعديلات');
       resetUserForm();
@@ -2092,8 +2119,11 @@ $('btnAddUser').addEventListener('click', async ()=>{
     return;
   }
 
-  if(!fullName || !username || pin.length!==6 || !/^\d{6}$/.test(pin)){
-    showToast('يرجى إدخال الرمز السري'); return;
+  if(!fullName || !username){
+    showToast('يرجى إدخال الاسم الكامل واسم الدخول'); return;
+  }
+  if(!pinRegex.test(pin)){
+    showToast('الرمز السري يجب أن يكون ' + PIN_LENGTH + ' أرقام'); return;
   }
   if(authUsers.some(u=>u.username===username)){ showToast('⚠️ اسم الدخول مستعمل مسبقًا'); return; }
   const ok = await safeAppend('users', userToRow({fullName, username, pin, position, active:true}), 'addUser');
@@ -2108,15 +2138,26 @@ async function toggleUserActive(username){
   const u = authUsers.find(x=>x.username===username);
   if(!u) return;
   const newActive = u.active === false ? true : false;
-  const ok = await safeUpdate('users', 'اسم_الدخول', username, {'نشط': newActive}, 'toggleUser');
+  const ok = await safeUpdate('users', 'اسم_الدخول', u.docId, {'نشط': newActive}, 'toggleUser');
   if(ok){ await refreshUsers(); render(); }
 }
 function confirmDeleteUser(username){
   const u = authUsers.find(x=>x.username===username);
-  const label = u ? u.fullName : username;
+  if(!u){ showToast('⚠️ الحساب غير موجود'); return; }
+  const label = u.fullName || username;
   openConfirmDelete('هل أنت متأكد من حذف حساب "' + label + '" نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.', async ()=>{
-    const ok = await safeDelete('users', 'اسم_الدخول', username, 'deleteUser');
-    if(ok){ if(editingUserUsername===username) resetUserForm(); await refreshUsers(); render(); showToast('✅ تم حذف الحساب'); }
+    // Delete by the real Firestore document ID (not the lower-cased username).
+    const ok = await safeDelete('users', 'اسم_الدخول', u.docId, 'deleteUser');
+    if(ok){
+      if(editingUserUsername===username) resetUserForm();
+      await refreshUsers();
+      render();
+      if(authUsers.some(x=>x.docId===u.docId)){
+        showToast('⚠️ لم يتم الحذف — تحقق من صلاحيات قاعدة البيانات');
+      }else{
+        showToast('✅ تم حذف الحساب');
+      }
+    }
   });
 }
 
